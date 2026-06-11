@@ -641,20 +641,38 @@
       updateStats();
     }
     // -------------------------------------------------------------------
-    shuffleArray(qs);
+shuffleArray(qs);
 
-    qs.forEach(q => {
-      const correctAnswer = q.opts[q.ans];
+qs.forEach(q => {
 
-      for (let i = q.opts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [q.opts[i], q.opts[j]] = [q.opts[j], q.opts[i]];
-      }
+  // Create option objects
+  let options = q.opts.map((text, index) => ({
+    text,
+    correct: index === q.ans
+  }));
 
-      q.ans = q.opts.indexOf(correctAnswer);
-    });
+  // Shuffle options
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
 
-    renderList();
+  // Rebuild options array
+  q.opts = options.map(o => o.text);
+
+  // Find new correct answer index
+  q.ans = options.findIndex(o => o.correct);
+  console.log(
+  "Question:",
+  q.q,
+  "Correct:",
+  q.opts[q.ans],
+  "Index:",
+  q.ans
+);
+});
+
+renderList();
     // -------------------------------------------------------------------
 
     function selectOpt(qi, oi) {

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:transparent;color:var(--fg,#1a1a1a);font-size:12px;padding:10px}
+h1{font-size:15px;color:var(--accent,#5B3FD4);margin-bottom:10px;border-bottom:2px solid var(--accent,#5B3FD4);padding-bottom:6px}
+.search-wrap{margin-bottom:10px}
+.search-wrap input{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--accent,#5B3FD4);font-size:13px;background:var(--surface,#f8f8f8);color:var(--fg,#1a1a1a);outline:none}
+.topic-nav{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.topic-btn{padding:4px 10px;border-radius:16px;border:1.5px solid var(--accent,#5B3FD4);background:transparent;color:var(--accent,#5B3FD4);cursor:pointer;font-size:11px;font-weight:600;transition:all 0.2s}
+.topic-btn.active,.topic-btn:hover{background:var(--accent,#5B3FD4);color:#fff}
+.topic-section{margin-bottom:18px;border:1px solid #ddd;border-radius:10px;overflow:hidden}
+.topic-header{background:var(--accent,#5B3FD4);color:#fff;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.topic-header .chevron{transition:transform 0.2s;font-size:14px}
+.topic-header.open .chevron{transform:rotate(180deg)}
+.topic-body{display:none;padding:0}
+.topic-body.open{display:block}
+.cmd-table{width:100%;border-collapse:collapse}
+.cmd-table thead tr{background:var(--surface2,#f0eeff)}
+.cmd-table th{padding:6px 10px;text-align:left;font-size:11px;color:var(--accent,#5B3FD4);font-weight:700;border-bottom:1px solid #ddd}
+.cmd-table td{padding:6px 10px;border-bottom:1px solid #eee;vertical-align:top;line-height:1.5}
+.cmd-table tr:last-child td{border-bottom:none}
+.cmd-table tr:hover td{background:var(--surface2,#f8f8f8)}
+code{background:var(--surface2,#1e1e2e);color:#a6e3a1;padding:2px 7px;border-radius:4px;font-family:'Courier New',monospace;font-size:11px;display:inline-block}
+.tag-config{background:#5B3FD4;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.tag-verify{background:#1D9E75;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.tag-clear{background:#e05a2b;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.tag-no{background:#b91c1c;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.tag-debug{background:#7c3aed;color:#fff;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.no-results{padding:20px;text-align:center;color:#888}
+.count-badge{background:rgba(255,255,255,0.3);border-radius:10px;padding:1px 8px;font-size:11px}
+            .complete-banner {
+      background: linear-gradient(135deg, #5B3FD4, #1D9E75);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px
+    }
+</style>
+</head>
+<body>
+<div class="complete-banner">🏆 CCNA Complete Command Reference — All Topics</div>
+<div class="search-wrap">
+  <input type="text" id="search" placeholder="🔍  Search any command or keyword (e.g. ospf, vlan, nat, show, acl...)" oninput="filterAll()">
+</div>
+<div class="topic-nav" id="topicNav"></div>
+<div id="content"></div>
+
+<script>
+const topics = [
+{
+  id:"basic",title:"Basic Device Setup & Navigation",color:"#5B3FD4",
+  cmds:[
+    {type:"config",cmd:"hostname R1",why:"Sets the device name. Shown in CLI prompt. Required before generating SSH keys."},
+    {type:"config",cmd:"enable secret Cisco123!",why:"Sets encrypted privileged EXEC password using MD5 (Type 5). Overrides 'enable password' if both exist. Use this — never 'enable password'."},
+    {type:"config",cmd:"enable password Cisco",why:"Sets unencrypted privileged EXEC password (Type 0 — plaintext). Legacy — always use 'enable secret' instead."},
+    {type:"config",cmd:"service password-encryption",why:"Applies Type 7 (XOR obfuscation) to all plaintext passwords in the config. NOT real encryption — easily reversed. Prevents casual shoulder-surfing."},
+    {type:"config",cmd:"security passwords min-length 10",why:"Enforces a minimum password length of 10 characters. Rejects shorter passwords."},
+    {type:"config",cmd:"login block-for 120 attempts 3 within 60",why:"Blocks ALL logins for 120 seconds if 3 failed attempts occur within 60 seconds. Brute-force protection."},
+    {type:"config",cmd:"banner motd # Warning: Authorized only! #",why:"Sets a message-of-the-day banner shown BEFORE login. Legal notice to deter unauthorized access. The # is the delimiter — any character can be used."},
+    {type:"config",cmd:"no ip domain-lookup",why:"Disables DNS lookup of mistyped commands. Without this, a typo causes a long DNS timeout pause. Standard practice in labs."},
+    {type:"config",cmd:"line console 0",why:"Enters console line config mode. Configures the physical console port settings."},
+    {type:"config",cmd:"line vty 0 15",why:"Enters virtual terminal (VTY) line config mode for lines 0-15. Configures remote access (SSH/Telnet) settings."},
+    {type:"config",cmd:"login local",why:"Requires username and password from the local database for login. Use on console and VTY lines."},
+    {type:"config",cmd:"exec-timeout 5 0",why:"Logs out idle sessions after 5 minutes 0 seconds. Prevents unattended sessions remaining open. '0 0' disables timeout (not recommended in production)."},
+    {type:"config",cmd:"logging synchronous",why:"Prevents console log messages from interrupting your typing. Messages appear on a new line instead of mid-command."},
+    {type:"verify",cmd:"show version",why:"Shows IOS version, uptime, hardware platform, memory, interfaces, and license info. First command to run on any unknown device."},
+    {type:"verify",cmd:"show running-config",why:"Shows the current active configuration in RAM. This is the live config — what the device is using right now."},
+    {type:"verify",cmd:"show startup-config",why:"Shows the saved configuration in NVRAM. This loads on reboot. If startup ≠ running, changes will be lost on reload."},
+    {type:"verify",cmd:"show flash",why:"Lists files stored in flash memory — IOS image files, configs. Used to check available space before uploading new IOS."},
+    {type:"verify",cmd:"show history",why:"Shows previously entered commands in the current session. Useful for recalling commands."},
+    {type:"config",cmd:"copy running-config startup-config",why:"Saves running config to NVRAM. If you don't do this, all changes are lost on reload. Most critical command after making changes."},
+    {type:"config",cmd:"write memory",why:"Shortcut for 'copy running-config startup-config'. Same function — saves config."},
+    {type:"clear",cmd:"erase startup-config",why:"Deletes the saved config from NVRAM. On next reload, device starts fresh with no config. Use when resetting a device."},
+    {type:"clear",cmd:"reload",why:"Reboots the device. If you haven't saved, changes are lost. Prompts to save first."},
+  ]
+},
+{
+  id:"interfaces",title:"Interface Configuration",color:"#1D9E75",
+  cmds:[
+    {type:"config",cmd:"interface GigabitEthernet0/0",why:"Enters interface configuration mode for Gi0/0. All subsequent commands apply to this interface."},
+    {type:"config",cmd:"interface range Gi0/0 - 3",why:"Enters config mode for multiple interfaces at once. Apply the same config to all selected interfaces simultaneously."},
+    {type:"config",cmd:"ip address 192.168.1.1 255.255.255.0",why:"Assigns an IPv4 address and subnet mask to the interface. The router uses this IP to communicate on that network segment."},
+    {type:"config",cmd:"ipv6 address 2001:DB8:1::1/64",why:"Assigns a static IPv6 address with prefix length to the interface."},
+    {type:"config",cmd:"ipv6 address FE80::1 link-local",why:"Manually assigns a link-local IPv6 address. Link-local is required for IPv6 to work and is used by routing protocols."},
+    {type:"config",cmd:"ipv6 enable",why:"Enables IPv6 on the interface and auto-generates a link-local address (EUI-64 based). No global address assigned."},
+    {type:"config",cmd:"no shutdown",why:"Administratively enables the interface. By default, router interfaces are shutdown. THIS is why interfaces don't work until you run this."},
+    {type:"config",cmd:"shutdown",why:"Administratively disables the interface. Stops all traffic. Used for maintenance or decommissioning."},
+    {type:"config",cmd:"description WAN Link to ISP",why:"Adds a text description to the interface. Purely informational — helps with documentation and troubleshooting."},
+    {type:"config",cmd:"duplex full",why:"Forces full-duplex operation — send and receive simultaneously. Used to fix duplex mismatch causing late collisions."},
+    {type:"config",cmd:"duplex auto",why:"Allows interface to auto-negotiate duplex with connected device. Default on most interfaces."},
+    {type:"config",cmd:"speed 1000",why:"Forces interface speed to 1000 Mbps. Use to fix speed mismatch. Options: 10, 100, 1000."},
+    {type:"config",cmd:"speed auto",why:"Allows interface to auto-negotiate speed. Default behaviour."},
+    {type:"config",cmd:"ip mtu 1500",why:"Sets the Maximum Transmission Unit on the interface. Must match on both ends of an OSPF adjacency or neighbors get stuck in ExStart."},
+    {type:"verify",cmd:"show ip interface brief",why:"MOST USED command. Shows all interfaces with IP, status (up/down), and protocol (up/down). Quick health check of all interfaces at once."},
+    {type:"verify",cmd:"show interfaces GigabitEthernet0/0",why:"Detailed stats for one interface — speed, duplex, errors, input/output packets, CRC errors, collisions. Used to diagnose cable/duplex issues."},
+    {type:"verify",cmd:"show interfaces status",why:"Switch command — shows port, VLAN, duplex, speed, type for all ports in a table. Quick overview of all switch ports."},
+    {type:"verify",cmd:"show ipv6 interface brief",why:"Same as 'show ip interface brief' but for IPv6. Shows IPv6 addresses and interface status."},
+    {type:"verify",cmd:"show ipv6 interface Gi0/0",why:"Detailed IPv6 info for one interface — all IPv6 addresses (link-local, global), joined multicast groups."},
+    {type:"clear",cmd:"clear counters GigabitEthernet0/0",why:"Resets interface error counters to zero. Run this before testing to get clean stats for troubleshooting."},
+    {type:"no",cmd:"no ip address",why:"Removes the IP address from the interface. The interface stays up but has no IP."},
+    {type:"no",cmd:"no shutdown",why:"Re-enables a shutdown interface. The interface comes back up."},
+  ]
+},
+{
+  id:"vlan",title:"VLANs & Trunking",color:"#2563EB",
+  cmds:[
+    {type:"config",cmd:"vlan 10",why:"Creates VLAN 10 in the VLAN database. Must exist before you can assign ports to it."},
+    {type:"config",cmd:"name SALES",why:"Assigns a name to the VLAN. Purely descriptive — helps identify VLANs in 'show vlan brief' output."},
+    {type:"config",cmd:"switchport mode access",why:"Forces the port to be an access port (carries only one VLAN). Use on ports connected to end devices."},
+    {type:"config",cmd:"switchport access vlan 10",why:"Assigns the access port to VLAN 10. Frames in/out of this port belong to VLAN 10."},
+    {type:"config",cmd:"switchport voice vlan 20",why:"Assigns a separate voice VLAN 20 to the port. IP phone tags its own traffic as VLAN 20. PC traffic uses the data VLAN. Enables both on one port."},
+    {type:"config",cmd:"switchport trunk encapsulation dot1q",why:"Sets 802.1Q as the trunk encapsulation method. Required on Layer 3 switches before setting trunk mode. Layer 2 switches don't need this."},
+    {type:"config",cmd:"switchport mode trunk",why:"Forces the port to be a trunk port — carries traffic for multiple VLANs tagged with 802.1Q."},
+    {type:"config",cmd:"switchport trunk native vlan 999",why:"Changes the native VLAN from default VLAN 1 to VLAN 999. Native VLAN traffic is untagged on trunk. Changing it from VLAN 1 is a security best practice."},
+    {type:"config",cmd:"switchport trunk allowed vlan 10,20,30",why:"Restricts the trunk to only carry VLANs 10, 20, and 30. All other VLANs are blocked on this trunk — improves security and reduces unnecessary traffic."},
+    {type:"config",cmd:"switchport trunk allowed vlan add 40",why:"Adds VLAN 40 to the allowed list without removing existing VLANs. Use 'add' — without it, you REPLACE the allowed list."},
+    {type:"config",cmd:"switchport nonegotiate",why:"Disables DTP (Dynamic Trunking Protocol) on the port. Prevents the port from negotiating trunk mode. Use on ports facing untrusted devices."},
+    {type:"config",cmd:"interface vlan 10",why:"Creates a Switch Virtual Interface (SVI) for VLAN 10. Assign an IP to this to enable inter-VLAN routing on a Layer 3 switch."},
+    {type:"config",cmd:"ip routing",why:"Enables IP routing on a Layer 3 switch. Without this command, the switch won't route between VLANs even with SVIs configured."},
+    {type:"verify",cmd:"show vlan brief",why:"Shows all VLANs, their names, and which ports belong to each VLAN. Most used VLAN verification command."},
+    {type:"verify",cmd:"show vlan id 10",why:"Detailed info for VLAN 10 specifically — ports, state, type."},
+    {type:"verify",cmd:"show interfaces trunk",why:"Shows all trunk ports — native VLAN, allowed VLANs, VLANs actually forwarding. Critical for trunk troubleshooting."},
+    {type:"verify",cmd:"show interfaces Gi0/1 trunk",why:"Shows trunk details for one specific interface."},
+    {type:"verify",cmd:"show interfaces Gi0/1 switchport",why:"Shows full switchport info — mode (access/trunk), VLANs, DTP state. Best single command to diagnose a switchport."},
+    {type:"no",cmd:"no vlan 10",why:"Deletes VLAN 10 from the switch. Any ports assigned to it become inactive. Does NOT work for VLAN 1 (cannot be deleted)."},
+    {type:"no",cmd:"no switchport trunk allowed vlan 40",why:"Removes VLAN 40 from the trunk allowed list."},
+    {type:"no",cmd:"no switchport access vlan",why:"Returns the port to the default VLAN (VLAN 1)."},
+  ]
+},
+{
+  id:"stp",title:"Spanning Tree Protocol (RSTP/Rapid PVST+)",color:"#0891b2",
+  cmds:[
+    {type:"config",cmd:"spanning-tree mode rapid-pvst",why:"Sets STP mode to Rapid PVST+. This is Cisco's default. Rapid PVST+ converges in 1-5 seconds vs 30-50 for classic STP."},
+    {type:"config",cmd:"spanning-tree vlan 10 priority 4096",why:"Sets STP bridge priority for VLAN 10 to 4096. Lower priority = more likely to become root bridge. Must be a multiple of 4096."},
+    {type:"config",cmd:"spanning-tree vlan 10 root primary",why:"Automatically sets priority low enough to guarantee this switch wins root bridge election for VLAN 10. Simpler than setting priority manually."},
+    {type:"config",cmd:"spanning-tree vlan 10 root secondary",why:"Sets priority to become root bridge if the primary fails. Backup root bridge."},
+    {type:"config",cmd:"spanning-tree portfast",why:"Applied on access ports. Skips STP Listening/Learning states — goes directly to Forwarding. Eliminates 30-second delay when a PC boots. ONLY use on end-device ports, never on switch-to-switch links."},
+    {type:"config",cmd:"spanning-tree portfast default",why:"Enables PortFast on ALL access ports globally. Convenient for switches with many user ports."},
+    {type:"config",cmd:"spanning-tree bpduguard enable",why:"If this PortFast port receives a BPDU (meaning a switch is connected), the port immediately goes err-disabled. Prevents rogue switches from affecting STP topology."},
+    {type:"config",cmd:"spanning-tree portfast bpduguard default",why:"Enables BPDU Guard on all PortFast-enabled ports globally. Best practice — always pair with portfast default."},
+    {type:"config",cmd:"spanning-tree guard root",why:"Applied on ports where you don't want an external switch to become root. If a superior BPDU arrives, port goes root-inconsistent (blocked). Protects your chosen root bridge."},
+    {type:"config",cmd:"spanning-tree guard loop",why:"If a non-designated port stops receiving BPDUs (possible unidirectional link failure), it goes loop-inconsistent instead of transitioning to forwarding — prevents loops."},
+    {type:"config",cmd:"spanning-tree bpdufilter enable",why:"Stops sending AND receiving BPDUs on this port. Effectively disables STP on the port. Use with extreme caution — can cause loops. Sometimes used on ports to external networks."},
+    {type:"config",cmd:"spanning-tree vlan 10 cost 10",why:"Manually sets the STP path cost for this interface for VLAN 10. Lower cost = preferred path. Used to influence which port becomes root port."},
+    {type:"config",cmd:"ip ospf priority 100",why:"On a Layer 3 switch, sets OSPF DR priority. (On STP: spanning-tree port priority value)"},
+    {type:"verify",cmd:"show spanning-tree",why:"Shows STP state for all VLANs — root bridge ID, local bridge ID, port roles (root/designated/alternate), port states."},
+    {type:"verify",cmd:"show spanning-tree vlan 10",why:"STP details for VLAN 10 only. Shows root bridge, this switch's priority, all ports with role and state."},
+    {type:"verify",cmd:"show spanning-tree vlan 10 detail",why:"Very detailed STP output — timers, port costs, BPDUs sent/received. Use for deep troubleshooting."},
+    {type:"verify",cmd:"show spanning-tree summary",why:"Quick summary — how many VLANs are running STP, total blocked/forwarding ports, which features are enabled (PortFast, BPDU Guard etc.)"},
+    {type:"verify",cmd:"show spanning-tree interface Gi0/1",why:"STP state for one specific interface — role, state, cost, priority."},
+    {type:"no",cmd:"no spanning-tree portfast",why:"Disables PortFast on the interface. Port will go through full STP state transitions."},
+    {type:"no",cmd:"no spanning-tree bpduguard enable",why:"Disables BPDU Guard on the interface."},
+  ]
+},
+{
+  id:"etherchannel",title:"EtherChannel (LACP / PAgP)",color:"#7c3aed",
+  cmds:[
+    {type:"config",cmd:"channel-group 1 mode active",why:"Adds this interface to EtherChannel group 1 using LACP active mode. Active = sends LACP packets to initiate channel. At least one side must be active."},
+    {type:"config",cmd:"channel-group 1 mode passive",why:"LACP passive mode — waits for LACP packets, won't initiate. Channel forms only if other side is active. Passive+passive = no channel!"},
+    {type:"config",cmd:"channel-group 1 mode desirable",why:"PAgP desirable mode (Cisco proprietary) — actively tries to form channel. At least one side must be desirable."},
+    {type:"config",cmd:"channel-group 1 mode auto",why:"PAgP auto mode — passive, waits for PAgP packets. Auto+auto = no channel."},
+    {type:"config",cmd:"channel-group 1 mode on",why:"Static EtherChannel — no negotiation protocol. Both sides must use 'on'. Cannot mix 'on' with LACP or PAgP modes."},
+    {type:"config",cmd:"interface port-channel 1",why:"Enters the logical port-channel interface. Configure trunk/access settings HERE, not on individual member interfaces (though member configs must match)."},
+    {type:"config",cmd:"port-channel load-balance src-dst-mac",why:"Sets load balancing method across EtherChannel links. Options: src-mac, dst-mac, src-dst-mac, src-ip, dst-ip, src-dst-ip. Default is src-dst-mac."},
+    {type:"verify",cmd:"show etherchannel summary",why:"MOST USED EtherChannel command. Shows port-channel number, protocol, member ports, and status flags. Look for (SU) = Layer 2, in use = working correctly."},
+    {type:"verify",cmd:"show etherchannel port-channel",why:"Detailed info about the port-channel — load balancing method, member ports, age."},
+    {type:"verify",cmd:"show etherchannel detail",why:"Very detailed output including per-port stats, LACP/PAgP state."},
+    {type:"verify",cmd:"show lacp neighbor",why:"Shows LACP neighbor information — system ID, port priority of the other switch."},
+    {type:"verify",cmd:"show lacp internal",why:"Shows this switch's LACP port states, priorities, and key values."},
+    {type:"verify",cmd:"show interfaces port-channel 1",why:"Shows traffic stats, errors, speed for the logical bundle interface."},
+    {type:"no",cmd:"no channel-group 1",why:"Removes the interface from EtherChannel group 1. The interface reverts to a standalone port."},
+  ]
+},
+{
+  id:"cdp_lldp",title:"CDP & LLDP (Discovery Protocols)",color:"#059669",
+  cmds:[
+    {type:"config",cmd:"cdp run",why:"Enables CDP globally on the device. CDP is enabled by default on Cisco devices. Allows the device to discover Cisco neighbors."},
+    {type:"config",cmd:"no cdp run",why:"Disables CDP globally. Security best practice on internet-facing devices — prevents revealing device info to attackers."},
+    {type:"config",cmd:"no cdp enable",why:"Disables CDP on a specific interface only. Use on ports facing untrusted devices while keeping CDP on internal ports."},
+    {type:"config",cmd:"lldp run",why:"Enables LLDP globally. LLDP is disabled by default on Cisco devices. Needed to discover non-Cisco neighbors."},
+    {type:"config",cmd:"no lldp run",why:"Disables LLDP globally."},
+    {type:"config",cmd:"lldp transmit",why:"Enables LLDP transmission on a specific interface. Device sends LLDP advertisements out this port."},
+    {type:"config",cmd:"lldp receive",why:"Enables LLDP reception on a specific interface. Device processes incoming LLDP advertisements."},
+    {type:"config",cmd:"no lldp transmit",why:"Stops sending LLDP packets out this interface. Other devices won't see this device via LLDP."},
+    {type:"verify",cmd:"show cdp neighbors",why:"Shows directly connected Cisco neighbors — hostname, local interface, capability (R=router, S=switch, I=IP phone), platform, remote interface."},
+    {type:"verify",cmd:"show cdp neighbors detail",why:"Adds IP address, IOS version, and full platform info for each neighbor. Shows exact software version — useful for documentation, potential security concern."},
+    {type:"verify",cmd:"show cdp interface",why:"Shows which interfaces have CDP enabled and their CDP timers."},
+    {type:"verify",cmd:"show cdp",why:"Shows global CDP status — whether it's running, hello timer, holdtime."},
+    {type:"verify",cmd:"show lldp neighbors",why:"Shows directly connected neighbors via LLDP — works with any vendor (Cisco, HP, Juniper etc.)."},
+    {type:"verify",cmd:"show lldp neighbors detail",why:"Full LLDP neighbor details including capabilities, management IP, and system description."},
+    {type:"verify",cmd:"show lldp",why:"Shows LLDP global status — enabled/disabled, timers."},
+  ]
+},
+{
+  id:"routing_static",title:"Static Routing (IPv4 & IPv6)",color:"#b45309",
+  cmds:[
+    {type:"config",cmd:"ip route 10.2.2.0 255.255.255.0 10.1.1.2",why:"Creates a static route to network 10.2.2.0/24 via next-hop 10.1.1.2. Packets destined for 10.2.2.x are forwarded to 10.1.1.2."},
+    {type:"config",cmd:"ip route 10.2.2.0 255.255.255.0 Gi0/1",why:"Static route using exit interface instead of next-hop IP. Fine for serial links — for Ethernet, specify both interface AND next-hop (otherwise router ARPs for every destination)."},
+    {type:"config",cmd:"ip route 10.2.2.0 255.255.255.0 Gi0/1 10.1.1.2",why:"Best practice for Ethernet static routes — specifies BOTH exit interface and next-hop IP. Router knows exactly where to send without needing ARP."},
+    {type:"config",cmd:"ip route 0.0.0.0 0.0.0.0 10.0.0.1",why:"Default route — the Gateway of Last Resort. Matches ALL destinations when no more specific route exists. Points toward the ISP or internet gateway."},
+    {type:"config",cmd:"ip route 192.168.1.55 255.255.255.255 10.1.1.2",why:"Host route — routes to exactly ONE IP address (/32). Used for loopback reachability, specific server access, or policy routing."},
+    {type:"config",cmd:"ip route 10.2.2.0 255.255.255.0 10.1.1.3 200",why:"Floating static route — AD of 200 makes it lower priority than any dynamic protocol. This route only appears in the table if the primary route disappears. Backup route."},
+    {type:"config",cmd:"ipv6 unicast-routing",why:"Enables IPv6 routing on the router. WITHOUT this command, the router cannot route IPv6 packets between interfaces — it only works as an IPv6 host."},
+    {type:"config",cmd:"ipv6 route 2001:DB8:2::/64 2001:DB8:1::2",why:"IPv6 static route to 2001:DB8:2::/64 via next-hop 2001:DB8:1::2."},
+    {type:"config",cmd:"ipv6 route ::/0 2001:DB8:1::1",why:"IPv6 default route — ::/0 matches all IPv6 destinations. Equivalent to 0.0.0.0/0 for IPv4."},
+    {type:"config",cmd:"ipv6 route 2001:DB8:2::/64 Gi0/0 FE80::2",why:"IPv6 static route using link-local next-hop. When using a link-local address as next-hop, you MUST specify the exit interface too."},
+    {type:"verify",cmd:"show ip route",why:"Shows the complete IPv4 routing table — all learned routes with codes, prefixes, AD, metric, next-hop, age, outgoing interface."},
+    {type:"verify",cmd:"show ip route static",why:"Shows only static routes in the table. Use to verify your static route configs are installed."},
+    {type:"verify",cmd:"show ip route 10.2.2.0",why:"Shows the specific route for that network — which source, which next-hop, which interface will be used."},
+    {type:"verify",cmd:"show ip route 10.2.2.5",why:"Shows which route will be used for a specific HOST address — tests longest prefix match."},
+    {type:"verify",cmd:"show ipv6 route",why:"Shows the complete IPv6 routing table."},
+    {type:"verify",cmd:"show ipv6 route static",why:"Shows only IPv6 static routes."},
+    {type:"no",cmd:"no ip route 10.2.2.0 255.255.255.0 10.1.1.2",why:"Removes this specific static route from the routing table."},
+    {type:"no",cmd:"no ipv6 route ::/0 2001:DB8:1::1",why:"Removes the IPv6 default route."},
+  ]
+},
+{
+  id:"ospf",title:"OSPF (OSPFv2 Single Area)",color:"#0f766e",
+  cmds:[
+    {type:"config",cmd:"router ospf 1",why:"Enables the OSPF routing process with process ID 1. The process ID is locally significant — doesn't need to match on neighbors. Multiple OSPF processes can run on one router."},
+    {type:"config",cmd:"router-id 1.1.1.1",why:"Manually sets the OSPF Router ID to 1.1.1.1. Best practice — always set this. Without it, OSPF auto-selects (highest loopback or highest active interface IP). Manual RID = predictable, stable OSPF."},
+    {type:"config",cmd:"network 10.1.1.0 0.0.0.255 area 0",why:"Tells OSPF to advertise any interface with an IP in the 10.1.1.0/24 range and include it in Area 0. The wildcard 0.0.0.255 = /24. This is how you add interfaces to OSPF."},
+    {type:"config",cmd:"network 0.0.0.0 255.255.255.255 area 0",why:"Adds ALL interfaces to OSPF Area 0 (match-all wildcard). Quick way to enable OSPF on all interfaces — then use passive-interface to exclude specific ones."},
+    {type:"config",cmd:"ip ospf 1 area 0",why:"Interface-level alternative to the 'network' command. Run under the specific interface. Cleaner and more precise — adds only that interface to OSPF process 1, area 0."},
+    {type:"config",cmd:"passive-interface GigabitEthernet0/1",why:"Stops OSPF from sending Hello packets out Gi0/1 (toward end users). The interface's network is STILL advertised in OSPF — it's just not sending hellos. Prevents unnecessary OSPF traffic to hosts."},
+    {type:"config",cmd:"passive-interface default",why:"Makes ALL interfaces passive by default. Then use 'no passive-interface Gi0/0' on transit links. Safer approach — explicitly enable OSPF only where needed."},
+    {type:"config",cmd:"no passive-interface Gi0/0",why:"Re-enables OSPF hello sending on Gi0/0 after 'passive-interface default'. This interface will form OSPF neighbors."},
+    {type:"config",cmd:"auto-cost reference-bandwidth 10000",why:"Changes reference bandwidth to 10,000 Mbps (10Gbps). Fixes the problem where FastEthernet, GigabitEthernet, and 10G all have cost=1 by default. Now: 1G=cost 10, 10G=cost 1. Set the SAME value on ALL OSPF routers."},
+    {type:"config",cmd:"ip ospf cost 10",why:"Manually sets the OSPF cost for this specific interface. Overrides the auto-calculated cost. Lower cost = preferred path. Used to influence OSPF path selection."},
+    {type:"config",cmd:"ip ospf hello-interval 5",why:"Changes OSPF hello timer to 5 seconds on this interface. MUST match on both neighbors or adjacency won't form. Default is 10 sec on broadcast, 30 on NBMA."},
+    {type:"config",cmd:"ip ospf dead-interval 20",why:"Changes dead interval to 20 seconds (how long to wait without a hello before declaring neighbor down). MUST match on both ends. Default = 4× hello interval."},
+    {type:"config",cmd:"ip ospf priority 100",why:"Sets OSPF priority for DR/BDR election on broadcast networks. Higher = more likely to be DR. Default=1. Priority 0 = never becomes DR or BDR."},
+    {type:"config",cmd:"ip ospf mtu-ignore",why:"Tells OSPF to ignore MTU mismatch when forming adjacency. Fix for neighbors stuck in ExStart/Exchange state due to different MTU values. Better solution is to match MTU."},
+    {type:"config",cmd:"default-information originate",why:"Redistributes the default route (0.0.0.0/0) into OSPF. All other OSPF routers learn the default route from this router. This router MUST already have a default route. Add 'always' to advertise even without a default route."},
+    {type:"config",cmd:"default-information originate always",why:"Advertises default route into OSPF even if this router doesn't have a default route itself. Useful for testing or specific designs."},
+    {type:"verify",cmd:"show ip ospf neighbor",why:"MOST IMPORTANT OSPF command. Shows all OSPF neighbors — neighbor ID, priority, state (must be FULL for full adjacency), dead timer, neighbor IP, interface."},
+    {type:"verify",cmd:"show ip ospf neighbor detail",why:"Full details for each neighbor — interface, area, dead timer, DR/BDR addresses, neighbor capabilities."},
+    {type:"verify",cmd:"show ip ospf interface",why:"Shows OSPF state for ALL interfaces — area, cost, hello/dead timers, DR/BDR, neighbor count. Check timers here when debugging."},
+    {type:"verify",cmd:"show ip ospf interface Gi0/0",why:"OSPF details for one specific interface — DR/BDR election status, network type, timers, adjacency count."},
+    {type:"verify",cmd:"show ip ospf",why:"Shows OSPF process info — Router ID, number of areas, SPF calculation count, reference bandwidth, LSA counts."},
+    {type:"verify",cmd:"show ip ospf database",why:"Shows the LSDB (Link State Database) — all LSAs known to this router. Used to verify OSPF knows about all networks in the topology."},
+    {type:"verify",cmd:"show ip route ospf",why:"Shows only OSPF-learned routes in the routing table. Verify that expected networks are being advertised and received."},
+    {type:"verify",cmd:"show ip protocols",why:"Shows all routing protocols running — for OSPF: process ID, router ID, networks being advertised, passive interfaces, neighbors."},
+    {type:"debug",cmd:"debug ip ospf events",why:"Real-time debug showing OSPF events — hello sending/receiving, DR/BDR changes, neighbor state changes. Stop with 'no debug all' or 'undebug all'."},
+    {type:"debug",cmd:"debug ip ospf adj",why:"Shows OSPF adjacency formation in real-time — state transitions from Down through Full. Use to diagnose why neighbors won't form."},
+    {type:"no",cmd:"no router ospf 1",why:"Completely removes OSPF process 1 and all its config. All OSPF routes disappear from the routing table."},
+    {type:"no",cmd:"no network 10.1.1.0 0.0.0.255 area 0",why:"Removes this network statement — that interface is no longer included in OSPF. Adjacencies on it will drop."},
+  ]
+},
+{
+  id:"nat",title:"NAT (Static, Dynamic, PAT)",color:"#b91c1c",
+  cmds:[
+    {type:"config",cmd:"ip nat inside source static 192.168.1.10 203.0.113.10",why:"Creates a permanent one-to-one static NAT mapping. 192.168.1.10 (private) always translates to 203.0.113.10 (public). Used for servers that need a fixed public IP."},
+    {type:"config",cmd:"ip nat pool PUBLIC_POOL 203.0.113.1 203.0.113.10 netmask 255.255.255.240",why:"Defines a pool of public IP addresses for dynamic NAT. The router assigns addresses from this pool dynamically to internal hosts."},
+    {type:"config",cmd:"access-list 1 permit 192.168.1.0 0.0.0.255",why:"Defines which private IPs are eligible for NAT translation. Only IPs matching this ACL will be translated."},
+    {type:"config",cmd:"ip nat inside source list 1 pool PUBLIC_POOL",why:"Links the ACL (which IPs to translate) with the pool (what to translate them to). Dynamic NAT — pool addresses assigned first-come first-served."},
+    {type:"config",cmd:"ip nat inside source list 1 interface Gi0/1 overload",why:"PAT (NAT overload) — translates all matching IPs to the SINGLE IP of Gi0/1 using unique port numbers. The 'overload' keyword enables PAT. Most common NAT in real networks."},
+    {type:"config",cmd:"ip nat inside",why:"Tags this interface as the INSIDE (private/LAN side) of NAT. NAT translates traffic leaving this interface toward the outside. Must apply to LAN-facing interface."},
+    {type:"config",cmd:"ip nat outside",why:"Tags this interface as the OUTSIDE (public/WAN side) of NAT. Must apply to the WAN/internet-facing interface. Both inside and outside MUST be configured for NAT to work."},
+    {type:"verify",cmd:"show ip nat translations",why:"Shows the active NAT translation table — Inside Local, Inside Global, Outside Local, Outside Global for each active session."},
+    {type:"verify",cmd:"show ip nat translations verbose",why:"Adds timing info to the translation table — when each entry was created, when it expires. Useful for seeing if stale entries are causing issues."},
+    {type:"verify",cmd:"show ip nat statistics",why:"Shows NAT stats — total translations, misses, hits, inside/outside interfaces, pool usage. Use to verify NAT is actually translating traffic."},
+    {type:"clear",cmd:"clear ip nat translation *",why:"Clears ALL NAT translation table entries. Use when changing NAT config — stale entries can cause sessions to fail. Active sessions get dropped."},
+    {type:"clear",cmd:"clear ip nat translation inside 192.168.1.10 203.0.113.10",why:"Clears one specific NAT translation entry."},
+    {type:"debug",cmd:"debug ip nat",why:"Real-time NAT translation events — shows each packet being translated with before and after addresses. Very high output on busy routers."},
+    {type:"no",cmd:"no ip nat inside source static 192.168.1.10 203.0.113.10",why:"Removes a static NAT entry. That host loses its permanent public IP mapping."},
+    {type:"no",cmd:"no ip nat inside",why:"Removes the NAT inside designation from the interface."},
+  ]
+},
+{
+  id:"dhcp",title:"DHCP (Server, Client, Relay)",color:"#0369a1",
+  cmds:[
+    {type:"config",cmd:"ip dhcp excluded-address 192.168.1.1 192.168.1.20",why:"Reserves IPs 1-20 from being assigned by DHCP. These stay available for static assignment (router, server, printer). ALWAYS configure this FIRST before defining the pool."},
+    {type:"config",cmd:"ip dhcp pool LAN_POOL",why:"Creates a DHCP address pool named LAN_POOL. Enters DHCP pool configuration mode."},
+    {type:"config",cmd:"network 192.168.1.0 255.255.255.0",why:"Defines the subnet this DHCP pool serves. DHCP will assign addresses from this range (excluding reserved ones)."},
+    {type:"config",cmd:"default-router 192.168.1.1",why:"Tells DHCP clients to use 192.168.1.1 as their default gateway. Clients won't reach other networks without this."},
+    {type:"config",cmd:"dns-server 8.8.8.8 8.8.4.4",why:"Provides DNS server addresses to DHCP clients. Clients use these to resolve hostnames."},
+    {type:"config",cmd:"domain-name cisco.com",why:"Provides the domain name to DHCP clients. Used for DNS search suffix."},
+    {type:"config",cmd:"lease 7",why:"Sets DHCP lease duration to 7 days. After 7 days, the client must renew. Use shorter leases for guest networks, longer for stable environments."},
+    {type:"config",cmd:"lease infinite",why:"Sets an unlimited lease — the client keeps the IP forever. Not recommended for most environments."},
+    {type:"config",cmd:"ip address dhcp",why:"Configures a router interface to get its IP address from a DHCP server. Makes the router a DHCP client on that interface."},
+    {type:"config",cmd:"ip helper-address 10.1.1.100",why:"DHCP relay agent — configured on the router interface FACING clients. Converts DHCP broadcasts to unicast and forwards to the DHCP server at 10.1.1.100. Essential when DHCP server is on a different subnet."},
+    {type:"config",cmd:"no ip dhcp snooping information option",why:"Disables DHCP Option 82 insertion when using ip helper-address. Some DHCP servers reject packets with Option 82 — removing this fixes it."},
+    {type:"verify",cmd:"show ip dhcp pool",why:"Shows all configured DHCP pools — name, network, range, utilization (how many addresses leased vs available)."},
+    {type:"verify",cmd:"show ip dhcp binding",why:"Shows all currently active DHCP leases — which IP was assigned to which MAC address, lease expiry. Use to trace which device has which IP."},
+    {type:"verify",cmd:"show ip dhcp conflict",why:"Shows IP addresses that were assigned but caused conflicts (another device had the same IP). DHCP removes conflicting addresses from the pool."},
+    {type:"verify",cmd:"show ip dhcp statistics",why:"Shows DHCP message counts — Discovers, Offers, Requests, Acks received/sent. Useful for diagnosing DHCP conversation issues."},
+    {type:"verify",cmd:"show ip interface Gi0/0",why:"Shows if ip helper-address is configured on the interface and what server IP it's forwarding to."},
+    {type:"clear",cmd:"clear ip dhcp binding *",why:"Clears all DHCP lease bindings. Forces all clients to renew. Use when changing IP addressing scheme."},
+    {type:"clear",cmd:"clear ip dhcp conflict *",why:"Clears the DHCP conflict log. Allows previously conflicting addresses to be assigned again."},
+    {type:"no",cmd:"no ip dhcp pool LAN_POOL",why:"Deletes the DHCP pool entirely. No more addresses served from this pool."},
+    {type:"no",cmd:"no ip dhcp excluded-address 192.168.1.1 192.168.1.20",why:"Removes the exclusion — those addresses become available for DHCP assignment."},
+    {type:"no",cmd:"no service dhcp",why:"Completely disables the DHCP server and relay agent on the router."},
+  ]
+},
+{
+  id:"ntp",title:"NTP (Network Time Protocol)",color:"#4338ca",
+  cmds:[
+    {type:"config",cmd:"ntp server 216.239.35.0",why:"Configures this device as an NTP client — it syncs its clock from the server at 216.239.35.0. The most basic NTP config."},
+    {type:"config",cmd:"ntp server 216.239.35.4 prefer",why:"Sets this as the preferred NTP server. When multiple servers are configured, the 'prefer' keyword makes this one take priority."},
+    {type:"config",cmd:"ntp master 3",why:"Makes this router an NTP server with stratum 3. Other devices can sync from this router. Use when you don't have an external NTP server — the router becomes the time source for your network."},
+    {type:"config",cmd:"ntp authenticate",why:"Enables NTP authentication. Without authentication, any device can claim to be an NTP server. With authentication, clients only accept time from authenticated servers."},
+    {type:"config",cmd:"ntp authentication-key 1 md5 NTPkey123",why:"Creates NTP authentication key number 1 with password NTPkey123 using MD5 hashing."},
+    {type:"config",cmd:"ntp trusted-key 1",why:"Marks key 1 as trusted. The router only accepts NTP updates from servers using this key."},
+    {type:"config",cmd:"ntp server 216.239.35.0 key 1",why:"Associates key 1 with this NTP server. Both the key and trusted-key must be configured for authenticated NTP."},
+    {type:"config",cmd:"clock timezone IST 5 30",why:"Sets the timezone to IST (India Standard Time) = UTC+5:30. NTP syncs in UTC; this converts display to local time."},
+    {type:"config",cmd:"clock summer-time EDT recurring",why:"Enables automatic daylight saving time adjustment for EDT timezone."},
+    {type:"verify",cmd:"show ntp status",why:"MOST IMPORTANT NTP command. Shows if clock is synchronized, stratum level, and reference server. 'Clock is synchronized' = NTP working. 'unsynchronized' = problem."},
+    {type:"verify",cmd:"show ntp associations",why:"Shows all configured NTP servers and their status. * = selected peer (current sync source). + = candidate. ~ = configured. Address, reference, stratum shown."},
+    {type:"verify",cmd:"show clock",why:"Shows current date and time on the device. Add 'detail' to see the time source (NTP, hardware, manual)."},
+    {type:"verify",cmd:"show clock detail",why:"Shows current time WITH source information — whether it's from NTP, hardware calendar, or manually set."},
+    {type:"no",cmd:"no ntp server 216.239.35.0",why:"Removes this NTP server from the configuration."},
+    {type:"no",cmd:"no ntp master",why:"Removes the NTP master configuration — this router no longer acts as an NTP server."},
+  ]
+},
+{
+  id:"snmp",title:"SNMP",color:"#7c2d12",
+  cmds:[
+    {type:"config",cmd:"snmp-server community PUBLIC ro",why:"Creates SNMP community string 'PUBLIC' with read-only (ro) access. NMS can GET (read) values but cannot SET (change) them. v2c — no real security."},
+    {type:"config",cmd:"snmp-server community PRIVATE rw",why:"Community string with read-write (rw) access. NMS can GET and SET values — full control of device. Use strong strings and restrict with ACL."},
+    {type:"config",cmd:"snmp-server community PUBLIC ro 10",why:"Associates ACL 10 with the community string. Only NMS IPs permitted by ACL 10 can use this community. Restricts who can poll the device."},
+    {type:"config",cmd:"snmp-server host 10.1.1.100 version 2c PUBLIC",why:"Defines the NMS (Network Management Station) that will receive SNMP traps. Traps are sent to 10.1.1.100 using community 'PUBLIC' and SNMPv2c."},
+    {type:"config",cmd:"snmp-server enable traps",why:"Enables ALL SNMP trap types. The device will proactively notify the NMS when events occur."},
+    {type:"config",cmd:"snmp-server enable traps ospf",why:"Enables only OSPF-related SNMP traps — neighbor state changes, SPF runs etc."},
+    {type:"config",cmd:"snmp-server group ADMIN v3 priv",why:"Creates SNMPv3 group 'ADMIN' with privacy (encryption) security level. v3 groups define the security level for users assigned to them."},
+    {type:"config",cmd:"snmp-server user NETADMIN ADMIN v3 auth sha Cisco123 priv aes 128 Cisco456",why:"Creates SNMPv3 user 'NETADMIN' in group 'ADMIN'. Uses SHA for authentication (password Cisco123) and AES-128 for encryption (key Cisco456). Most secure SNMP configuration."},
+    {type:"config",cmd:"snmp-server location Server Room A Building 1",why:"Sets the physical location of the device — stored in sysLocation MIB object. NMS can display this."},
+    {type:"config",cmd:"snmp-server contact admin@company.com",why:"Sets the contact info for the device — stored in sysContact MIB. NMS can display who to contact for this device."},
+    {type:"verify",cmd:"show snmp",why:"Shows SNMP status — enabled traps, community strings (masked), contact, location, chassis ID, number of packets sent/received."},
+    {type:"verify",cmd:"show snmp community",why:"Shows configured community strings and their access levels (ro/rw) and associated ACLs."},
+    {type:"verify",cmd:"show snmp group",why:"Shows SNMPv3 groups and their security models and levels."},
+    {type:"verify",cmd:"show snmp user",why:"Shows SNMPv3 users and their authentication/privacy settings."},
+  ]
+},
+{
+  id:"syslog",title:"Syslog",color:"#1e40af",
+  cmds:[
+    {type:"config",cmd:"logging on",why:"Enables syslog logging globally. Logging is on by default — this re-enables it if it was turned off."},
+    {type:"config",cmd:"logging host 10.1.1.200",why:"Sends syslog messages to an external syslog server at 10.1.1.200. External storage — messages persist even if the device reboots."},
+    {type:"config",cmd:"logging trap warnings",why:"Sets syslog server logging level to 'warnings' (level 4). Messages at levels 0-4 (Emergency through Warning) are sent to the server. Level 5-7 are NOT sent."},
+    {type:"config",cmd:"logging buffered 16384 debugging",why:"Stores syslog messages in local RAM buffer (16384 bytes). Level 7 (debugging) means ALL messages stored. View with 'show logging'."},
+    {type:"config",cmd:"logging console informational",why:"Sets what messages display on the console — level 6 and below (0-6). All except debug messages shown on console."},
+    {type:"config",cmd:"logging monitor informational",why:"Sets message level for VTY (SSH/Telnet) sessions. You must also run 'terminal monitor' in the session to actually see messages."},
+    {type:"config",cmd:"service timestamps log datetime msec",why:"Adds date, time, and milliseconds to all log messages. Critical for correlating events across multiple devices. Without timestamps, logs are almost useless for troubleshooting."},
+    {type:"config",cmd:"service timestamps debug datetime msec",why:"Adds timestamps to debug messages as well."},
+    {type:"config",cmd:"logging source-interface Loopback0",why:"Uses the loopback interface IP as the source IP of syslog messages. Ensures consistent source IP even if physical interfaces change state."},
+    {type:"verify",cmd:"show logging",why:"Shows the local log buffer contents — recent log messages, current logging levels, buffer size, and where logging is sent (console, syslog server)."},
+    {type:"verify",cmd:"show logging | include OSPF",why:"Filters log output to show only lines containing 'OSPF'. Useful for finding specific events in a large log."},
+    {type:"config",cmd:"terminal monitor",why:"Run in an SSH/Telnet session — enables log messages to appear in your remote session. Without this, you only see logs if logged in to console."},
+    {type:"clear",cmd:"clear logging",why:"Clears the local log buffer. Start with a clean slate before testing or troubleshooting."},
+    {type:"no",cmd:"no logging host 10.1.1.200",why:"Removes the syslog server configuration. Messages are no longer forwarded to that server."},
+    {type:"no",cmd:"no logging on",why:"Disables all logging. Not recommended in production."},
+  ]
+},
+{
+  id:"acl",title:"Access Control Lists (ACLs)",color:"#991b1b",
+  cmds:[
+    {type:"config",cmd:"access-list 10 permit 192.168.1.0 0.0.0.255",why:"Standard ACL 10 — permits traffic from the 192.168.1.0/24 network. Standard ACLs filter by SOURCE IP only. Place near the destination."},
+    {type:"config",cmd:"access-list 10 deny any",why:"Explicitly denies all other traffic. Though there's an implicit deny any at the end of every ACL, making it explicit is good practice for clarity."},
+    {type:"config",cmd:"access-list 100 deny tcp 192.168.1.0 0.0.0.255 any eq 23",why:"Extended ACL — denies TCP from 192.168.1.0/24 to ANY destination on port 23 (Telnet). Extended ACLs filter src+dst+protocol+port. Place near SOURCE."},
+    {type:"config",cmd:"access-list 100 permit ip any any",why:"Permits all other IP traffic. Extended ACLs must end with this if you want everything else to pass — the implicit deny blocks everything otherwise."},
+    {type:"config",cmd:"access-list 100 deny tcp any host 10.1.1.10 eq 22",why:"Denies SSH (port 22) from anyone to host 10.1.1.10. 'host' keyword = /32 (exact IP match)."},
+    {type:"config",cmd:"ip access-list standard BLOCK_MGMT",why:"Creates a NAMED standard ACL. Named ACLs allow you to delete individual entries by sequence number — numbered ACLs require deleting the whole ACL."},
+    {type:"config",cmd:"ip access-list extended FILTER_WEB",why:"Creates a named extended ACL. Same capability as numbered extended but with a name and editable entries."},
+    {type:"config",cmd:"10 permit tcp 192.168.0.0 0.0.0.255 any eq 80",why:"Inside a named ACL — sequence number 10 permits HTTP. Sequence numbers control order. You can insert entries between existing ones (e.g., add seq 15 between 10 and 20)."},
+    {type:"config",cmd:"no 20",why:"Inside a named ACL — deletes the entry with sequence number 20 ONLY. This is why named ACLs are preferred — targeted deletion without rewriting everything."},
+    {type:"config",cmd:"ip access-group 100 in",why:"Applies ACL 100 to the interface in the INBOUND direction — filters traffic arriving on this interface. One ACL per direction per interface maximum."},
+    {type:"config",cmd:"ip access-group 100 out",why:"Applies ACL 100 OUTBOUND — filters traffic leaving this interface."},
+    {type:"config",cmd:"access-class 50 in",why:"Applies ACL 50 to VTY lines — restricts who can SSH/Telnet to the device. 'access-class' is for VTY lines; 'ip access-group' is for interfaces."},
+    {type:"config",cmd:"ipv6 access-list BLOCK_V6",why:"Creates an IPv6 ACL. IPv6 ACLs are always named — there are no numbered IPv6 ACLs."},
+    {type:"config",cmd:"ipv6 traffic-filter BLOCK_V6 in",why:"Applies an IPv6 ACL to an interface. Use 'ipv6 traffic-filter' for IPv6, NOT 'ip access-group'."},
+    {type:"verify",cmd:"show access-lists",why:"Shows ALL ACLs on the device — every entry with match counts. Match counts are vital — they show if traffic is actually hitting each rule."},
+    {type:"verify",cmd:"show access-lists 100",why:"Shows only ACL 100. Use to verify a specific ACL's entries and match counts."},
+    {type:"verify",cmd:"show ip access-lists",why:"Shows only IPv4 ACLs. Excludes IPv6 ACLs."},
+    {type:"verify",cmd:"show ip interface Gi0/0",why:"Shows which ACL is applied on Gi0/0 in each direction — 'Outgoing access list is 100', 'Inbound access list is not set'. Critical for verifying ACL application."},
+    {type:"verify",cmd:"show running-config | section access-list",why:"Shows all ACL configuration lines in the running config. Quick way to see all ACLs without match counts."},
+    {type:"clear",cmd:"clear ip access-list counters",why:"Resets all ACL match counters to zero. Run before a test to get clean count data."},
+    {type:"clear",cmd:"clear ip access-list counters 100",why:"Resets counters for ACL 100 only."},
+    {type:"no",cmd:"no access-list 100",why:"Deletes ENTIRE numbered ACL 100. All entries gone. For named ACLs use 'no ip access-list extended NAME'."},
+    {type:"no",cmd:"no ip access-group 100 in",why:"Removes ACL 100 from the interface inbound direction. ACL still exists but is no longer applied here."},
+  ]
+},
+{
+  id:"layer2sec",title:"Layer 2 Security (DHCP Snooping, DAI, Port Security)",color:"#065f46",
+  cmds:[
+    {type:"config",cmd:"ip dhcp snooping",why:"Enables DHCP Snooping globally. After this, ALL ports are untrusted by default — DHCP server replies on untrusted ports are dropped. Must configure trusted ports immediately."},
+    {type:"config",cmd:"ip dhcp snooping vlan 10,20",why:"Enables DHCP Snooping specifically for VLANs 10 and 20. DHCP Snooping only runs on the specified VLANs."},
+    {type:"config",cmd:"ip dhcp snooping trust",why:"Marks this interface as TRUSTED for DHCP Snooping. DHCP server replies are allowed through this port. Apply on uplinks to real DHCP servers and inter-switch links."},
+    {type:"config",cmd:"ip dhcp snooping limit rate 15",why:"Rate-limits DHCP packets on untrusted ports to 15 packets/second. Prevents DHCP starvation attack where attacker sends thousands of DISCOVER packets to exhaust the pool."},
+    {type:"config",cmd:"ip arp inspection vlan 10,20",why:"Enables Dynamic ARP Inspection (DAI) for VLANs 10 and 20. DAI validates ARP packets against the DHCP Snooping binding table — drops invalid ARP mappings."},
+    {type:"config",cmd:"ip arp inspection trust",why:"Marks interface as trusted for DAI. ARP packets on this port are not validated. Apply on uplinks and inter-switch links. User ports remain untrusted."},
+    {type:"config",cmd:"ip arp inspection limit rate 100",why:"Rate-limits ARP packets on untrusted ports. Prevents ARP flooding attacks."},
+    {type:"config",cmd:"arp access-list STATIC_SERVERS",why:"Creates an ARP ACL for devices with static IPs (not in DHCP binding table). DAI uses this to validate static-IP devices that won't have DHCP bindings."},
+    {type:"config",cmd:"permit ip host 10.1.1.10 mac host 0050.56AA.BBCC",why:"Inside ARP ACL — permits ARP from IP 10.1.1.10 with MAC 0050.56AA.BBCC. Static IP device is manually mapped."},
+    {type:"config",cmd:"ip arp inspection filter STATIC_SERVERS vlan 10",why:"Applies the ARP ACL to DAI for VLAN 10. Static-IP devices in this ACL bypass the DHCP binding table check."},
+    {type:"config",cmd:"switchport port-security",why:"Enables port security on this access port. With default settings: max 1 MAC, violation action = shutdown."},
+    {type:"config",cmd:"switchport port-security maximum 2",why:"Allows up to 2 MAC addresses on this port. Useful for ports with an IP phone (phone + PC behind it)."},
+    {type:"config",cmd:"switchport port-security mac-address sticky",why:"Auto-learns MAC addresses and saves them to running config as static secure MACs. Learned MACs persist across reboots if you save the config."},
+    {type:"config",cmd:"switchport port-security mac-address 0050.7966.6800",why:"Manually assigns a specific allowed MAC to this port. Only this MAC can use the port."},
+    {type:"config",cmd:"switchport port-security violation shutdown",why:"DEFAULT violation mode — if an unauthorized MAC appears, port goes err-disabled immediately. Must be manually recovered."},
+    {type:"config",cmd:"switchport port-security violation restrict",why:"Drops frames from unauthorized MACs, increments violation counter, sends syslog. Port stays up for authorized MACs."},
+    {type:"config",cmd:"switchport port-security violation protect",why:"Silently drops frames from unauthorized MACs. No syslog, no counter increment. Port stays up. Hard to detect violations."},
+    {type:"config",cmd:"errdisable recovery cause psecure-violation",why:"Enables automatic recovery from err-disabled state caused by port security violation. After the recovery interval, the port automatically re-enables."},
+    {type:"config",cmd:"errdisable recovery interval 300",why:"Sets auto-recovery timer to 300 seconds (5 minutes). After a port goes err-disabled, it automatically recovers after 5 minutes."},
+    {type:"verify",cmd:"show ip dhcp snooping",why:"Shows DHCP Snooping status — enabled/disabled, VLANs, Option 82, trusted interfaces. Verify your trusted port config here."},
+    {type:"verify",cmd:"show ip dhcp snooping binding",why:"Shows the DHCP Snooping binding table — MAC address, IP, VLAN, interface, lease time. DAI uses this table. Also useful for IP-to-MAC-to-port mapping."},
+    {type:"verify",cmd:"show ip dhcp snooping statistics",why:"Shows packets forwarded and dropped — how many DHCP packets were validated/rejected by snooping."},
+    {type:"verify",cmd:"show ip arp inspection",why:"Shows DAI status — VLANs, trusted interfaces, forwarded/dropped ARP counts."},
+    {type:"verify",cmd:"show ip arp inspection statistics",why:"Detailed DAI stats — forwarded, dropped, DHCP drops, ACL drops per VLAN."},
+    {type:"verify",cmd:"show port-security",why:"Summary of port security on all interfaces — max allowed MACs, current MACs, violations, status."},
+    {type:"verify",cmd:"show port-security interface Fa0/1",why:"Detailed port security status for one port — current MACs, max, violation count, violation action, port status."},
+    {type:"verify",cmd:"show port-security address",why:"Shows all secure MAC addresses — which MAC is on which port, how it was learned (static/sticky/dynamic)."},
+    {type:"verify",cmd:"show errdisable recovery",why:"Shows which err-disable causes have auto-recovery enabled and the recovery interval."},
+    {type:"verify",cmd:"show interfaces Fa0/1 status",why:"Shows if a port is in err-disabled state. Status column shows 'err-disabled'."},
+    {type:"clear",cmd:"clear ip arp inspection statistics",why:"Resets DAI counters to zero."},
+    {type:"no",cmd:"no ip dhcp snooping",why:"Disables DHCP Snooping globally. All ports become trusted again."},
+    {type:"no",cmd:"no switchport port-security",why:"Disables port security on the interface. All MAC restrictions removed."},
+  ]
+},
+{
+  id:"ssh",title:"SSH & Remote Access",color:"#1d4ed8",
+  cmds:[
+    {type:"config",cmd:"crypto key generate rsa modulus 2048",why:"Generates RSA key pair with 2048-bit modulus. This key pair is what enables SSH encryption. REQUIRES hostname and ip domain-name to be set first. 1024-bit minimum for SSH v2; 2048-bit recommended."},
+    {type:"config",cmd:"ip ssh version 2",why:"Forces SSH version 2 only. SSHv2 is more secure than v1. Prevents fallback to the weaker SSHv1."},
+    {type:"config",cmd:"ip ssh time-out 60",why:"Sets SSH negotiation timeout to 60 seconds. If the login process takes longer than 60 seconds, the session is dropped."},
+    {type:"config",cmd:"ip ssh authentication-retries 3",why:"Allows 3 password attempts before the SSH session is dropped. Limits brute force via SSH."},
+    {type:"config",cmd:"ip ssh source-interface Loopback0",why:"Uses the loopback interface IP as the source for SSH connections initiated FROM this router. Ensures consistent source IP."},
+    {type:"config",cmd:"transport input ssh",why:"On VTY lines — ONLY allows SSH connections. Telnet is blocked. Most important security command for remote access."},
+    {type:"config",cmd:"transport input telnet ssh",why:"Allows both Telnet and SSH. Less secure — Telnet is unencrypted. Avoid in production."},
+    {type:"config",cmd:"transport input none",why:"Blocks ALL remote access to VTY lines — no SSH, no Telnet. For maximum security on critical devices."},
+    {type:"verify",cmd:"show ip ssh",why:"Shows SSH status — version, authentication timeout, retries, and whether SSH is enabled. If 'SSH Disabled' appears, check hostname, domain, and RSA keys."},
+    {type:"verify",cmd:"show ssh",why:"Shows active SSH sessions — connection ID, version, encryption, client IP, username, state."},
+    {type:"verify",cmd:"show users",why:"Shows all currently logged-in users — console, VTY lines, their IP addresses. Who is currently connected to this device."},
+    {type:"verify",cmd:"show line vty 0 15",why:"Shows VTY line configuration — transport protocols, access-class applied, exec-timeout."},
+    {type:"clear",cmd:"clear crypto key mypubkey rsa",why:"Deletes the RSA key pair. SSH will stop working. Regenerate with 'crypto key generate rsa'. Use when changing key size or re-keying for security."},
+    {type:"no",cmd:"no crypto key generate rsa",why:"Removes RSA keys — effectively disables SSH."},
+    {type:"no",cmd:"no ip ssh version 2",why:"Allows both SSH v1 and v2 again. Not recommended."},
+  ]
+},
+{
+  id:"qos",title:"QoS (Quality of Service)",color:"#6d28d9",
+  cmds:[
+    {type:"config",cmd:"class-map match-any VOIP",why:"Creates a class-map named VOIP. 'match-any' = match if ANY condition is true (OR logic). 'match-all' = ALL conditions must match (AND logic). Used to identify/classify traffic."},
+    {type:"config",cmd:"match dscp ef",why:"Inside a class-map — matches traffic marked with DSCP EF (Expedited Forwarding = value 46). This is standard voice payload marking."},
+    {type:"config",cmd:"match protocol rtp",why:"Matches RTP (Real-time Transport Protocol) traffic — used for voice and video streams. Requires NBAR (Network Based Application Recognition)."},
+    {type:"config",cmd:"policy-map QOS_POLICY",why:"Creates a policy-map — defines what to DO with classified traffic. Links class-maps to actions (mark, queue, police, shape)."},
+    {type:"config",cmd:"class VOIP",why:"Inside a policy-map — specifies which class this action applies to (references the class-map VOIP)."},
+    {type:"config",cmd:"priority 512",why:"Assigns a strict priority queue with 512 Kbps guaranteed bandwidth. Voice/video traffic in this class ALWAYS gets forwarded first. This is LLQ."},
+    {type:"config",cmd:"bandwidth 1024",why:"Guarantees minimum 1024 Kbps for this class in CBWFQ. When congested, this class always gets at least 1024 Kbps."},
+    {type:"config",cmd:"bandwidth percent 30",why:"Guarantees 30% of interface bandwidth to this class."},
+    {type:"config",cmd:"set dscp ef",why:"Marks the DSCP field of matching packets to EF (46). Marking ensures all downstream devices treat these packets as high priority."},
+    {type:"config",cmd:"set dscp af41",why:"Marks traffic as AF41 (Assured Forwarding class 4, drop probability 1) — used for interactive video."},
+    {type:"config",cmd:"police 512000 bps",why:"Polices traffic to 512 Kbps — traffic exceeding this is DROPPED. Used to enforce rate limits. Good for restricting bandwidth consumers."},
+    {type:"config",cmd:"service-policy output QOS_POLICY",why:"Applies the policy-map to the interface in the outbound direction. QoS takes effect on traffic leaving this interface."},
+    {type:"config",cmd:"service-policy input QOS_POLICY",why:"Applies the policy-map inbound — used for marking and policing incoming traffic."},
+    {type:"verify",cmd:"show policy-map",why:"Shows all configured policy-maps and their class definitions."},
+    {type:"verify",cmd:"show policy-map interface Gi0/0",why:"Shows QoS statistics for the interface — for each class: packets matched, queued, dropped, sent. Critical for verifying QoS is working and seeing queue behavior."},
+    {type:"verify",cmd:"show class-map",why:"Shows all class-maps and their match criteria."},
+    {type:"no",cmd:"no service-policy output QOS_POLICY",why:"Removes the QoS policy from the interface. Interface returns to best-effort (FIFO) forwarding."},
+  ]
+},
+{
+  id:"fhrp",title:"FHRP (HSRP / VRRP / GLBP)",color:"#b45309",
+  cmds:[
+    {type:"config",cmd:"standby version 2",why:"Enables HSRP version 2. HSRPv2 supports more groups (0-4095 vs 0-255), uses different multicast (224.0.0.102), and has millisecond timers. Always use v2 in modern networks."},
+    {type:"config",cmd:"standby 1 ip 10.1.1.1",why:"Creates HSRP group 1 with virtual IP 10.1.1.1. This is the IP that hosts use as their default gateway. Both Active and Standby routers must have the same VIP."},
+    {type:"config",cmd:"standby 1 priority 110",why:"Sets HSRP priority to 110 (default=100). Higher priority = becomes Active router. This router will be Active if priority is highest in the group."},
+    {type:"config",cmd:"standby 1 preempt",why:"Allows this router to RECLAIM the Active role if it recovers after failing. WITHOUT preempt, even if this router comes back up with higher priority, it stays Standby. Preempt makes it take back Active."},
+    {type:"config",cmd:"standby 1 preempt delay minimum 30",why:"Waits 30 seconds before preempting. Gives routing protocols time to converge before taking over as Active router."},
+    {type:"config",cmd:"standby 1 track Gi0/1 20",why:"Interface tracking — if Gi0/1 goes down, this router's HSRP priority automatically decreases by 20. If the decrease makes it lower than the Standby's priority, Standby takes over as Active. Intelligent failover."},
+    {type:"config",cmd:"standby 1 timers 1 3",why:"Sets HSRP hello timer to 1 second and dead timer to 3 seconds. Faster failover detection — default is 3 sec hello / 10 sec dead."},
+    {type:"config",cmd:"standby 1 authentication md5 key-string HSRPkey",why:"Adds MD5 authentication to HSRP. Prevents rogue routers from joining the HSRP group."},
+    {type:"verify",cmd:"show standby",why:"Shows HSRP state — Active/Standby, virtual IP, priorities, preempt status, tracked interfaces. Full HSRP status."},
+    {type:"verify",cmd:"show standby brief",why:"Compact one-line summary per HSRP group — group, priority, state (Active/Standby/Init), virtual IP, active router, standby router."},
+    {type:"verify",cmd:"show standby Gi0/0",why:"HSRP details for one specific interface."},
+    {type:"no",cmd:"no standby 1",why:"Removes all HSRP configuration for group 1 on this interface."},
+    {type:"no",cmd:"no standby 1 preempt",why:"Disables preemption — this router won't automatically take back the Active role."},
+  ]
+},
+{
+  id:"wireless",title:"Wireless (AP & WLC)",color:"#0891b2",
+  cmds:[
+    {type:"config",cmd:"ap name AP-FLOOR1 location Floor1-Lobby",why:"Names the AP and sets its location description in the WLC. Helps identify APs in large deployments."},
+    {type:"config",cmd:"ap name AP-FLOOR1 dot11 24ghz channel 6",why:"Manually sets the 2.4GHz channel to 6 on this AP. Override auto-RF selection. Use channels 1, 6, or 11 only for 2.4GHz."},
+    {type:"config",cmd:"wireless client vlan 10",why:"Associates wireless clients with VLAN 10. Client traffic is placed in VLAN 10 on the wired network."},
+    {type:"config",cmd:"wlan Corp-WiFi 1 Corp-WiFi",why:"Creates a WLAN profile with SSID 'Corp-WiFi', WLAN ID 1. This is a WLC CLI command."},
+    {type:"config",cmd:"client vlan 10",why:"Inside WLAN config — maps this WLAN to VLAN 10."},
+    {type:"config",cmd:"security wpa akm psk",why:"Sets WPA authentication to PSK (Pre-Shared Key) mode."},
+    {type:"config",cmd:"security wpa psk set-key ascii 0 MyWifiPassword",why:"Sets the WPA PSK passphrase."},
+    {type:"config",cmd:"no shutdown",why:"Enables (activates) the WLAN. WLANs are disabled by default after creation."},
+    {type:"verify",cmd:"show ap summary",why:"Lists all APs associated with the WLC — AP name, model, IP, state, location."},
+    {type:"verify",cmd:"show ap dot11 5ghz summary",why:"Shows all APs on the 5GHz band — channel, power level, client count."},
+    {type:"verify",cmd:"show wlan summary",why:"Lists all configured WLANs — ID, profile name, SSID, status, security."},
+    {type:"verify",cmd:"show client summary",why:"Lists all currently connected wireless clients — MAC, IP, WLAN, AP, RSSI."},
+    {type:"verify",cmd:"show ap config general AP-FLOOR1",why:"Detailed config for a specific AP — IP, mode, channels, power, associated WLC."},
+  ]
+},
+{
+  id:"troubleshoot",title:"Troubleshooting & Diagnostic Commands",color:"#374151",
+  cmds:[
+    {type:"verify",cmd:"ping 10.1.1.1",why:"Tests basic Layer 3 connectivity to 10.1.1.1. Uses ICMP echo. '!!!!!' = success. '.....' = failure (no route, ACL blocking, or host down)."},
+    {type:"verify",cmd:"ping 10.1.1.1 source Gi0/0",why:"Pings from a specific source interface. Essential for testing connectivity from a specific subnet — proves the return path works too."},
+    {type:"verify",cmd:"ping 10.1.1.1 repeat 100 size 1500",why:"Extended ping — sends 100 pings with 1500-byte packets. Tests for packet loss and MTU issues."},
+    {type:"verify",cmd:"traceroute 10.2.2.1",why:"Traces the path to destination — shows each router hop, IP, and latency. Identifies where packets are being dropped or delayed."},
+    {type:"verify",cmd:"traceroute 10.2.2.1 source Gi0/0",why:"Traceroute from a specific source interface. Tests the complete path including return route."},
+    {type:"verify",cmd:"show ip interface brief",why:"Quick view of ALL interfaces — IP address, status, protocol. 'down/down' = physical issue. 'up/down' = Layer 2 issue. 'up/up' = working."},
+    {type:"verify",cmd:"show interfaces Gi0/0",why:"Full interface statistics — errors, duplex, speed, MTU, input/output rates. Check for CRC errors (bad cable), input errors, late collisions (duplex mismatch)."},
+    {type:"verify",cmd:"show ip route",why:"Full routing table — verify the expected routes are present. If a route is missing, traffic won't reach that network."},
+    {type:"verify",cmd:"show arp",why:"Shows the ARP cache — IP to MAC mappings. If an IP isn't resolving, ARP entries are missing or wrong."},
+    {type:"verify",cmd:"show ip arp",why:"Same as 'show arp' — shows IPv4 ARP table."},
+    {type:"verify",cmd:"show mac address-table",why:"Shows the switch MAC address table — which MAC is on which port. Used to trace where a device is connected."},
+    {type:"verify",cmd:"show mac address-table dynamic",why:"Shows only dynamically learned MACs (not static or permanent)."},
+    {type:"verify",cmd:"show mac address-table address 0050.7966.AABB",why:"Finds which port a specific MAC address is on. Trace a device's location."},
+    {type:"verify",cmd:"show running-config",why:"The complete live configuration. When all else fails — read the config carefully to find what's wrong."},
+    {type:"verify",cmd:"show running-config interface Gi0/0",why:"Shows only the config for one interface — faster than reading the full config."},
+    {type:"verify",cmd:"show running-config | section ospf",why:"Filters running-config to show only OSPF-related lines. Use 'section' keyword for any feature."},
+    {type:"debug",cmd:"debug ip icmp",why:"Shows ICMP messages being sent/received in real time. See exactly what happens when you ping — useful for diagnosing why pings fail."},
+    {type:"debug",cmd:"debug ip routing",why:"Shows routing table changes in real time — routes being added or removed. Useful for watching OSPF or static route changes."},
+    {type:"debug",cmd:"no debug all",why:"STOPS ALL debug output. Always run this after using any debug command — debug output can flood the console and impact performance."},
+    {type:"debug",cmd:"undebug all",why:"Same as 'no debug all' — stops all active debugs."},
+    {type:"clear",cmd:"clear ip route *",why:"Clears the entire routing table — all routes removed and re-learned. Use to force routing protocol reconvergence."},
+    {type:"clear",cmd:"clear arp-cache",why:"Clears all ARP entries. The router re-learns MACs via ARP. Use when you suspect stale ARP entries are causing connectivity issues."},
+  ]
+},
+];
+
+const typeColors = {config:"tag-config",verify:"tag-verify",clear:"tag-clear",no:"tag-no",debug:"tag-debug"};
+const typeLabels = {config:"CONFIG",verify:"SHOW/VERIFY",clear:"CLEAR",no:"NO",debug:"DEBUG"};
+
+function renderAll(filterText, activeTopic) {
+  const content = document.getElementById('content');
+  const nav = document.getElementById('topicNav');
+  nav.innerHTML = '<button class="topic-btn'+(activeTopic===null?' active':'')+'" onclick="setTopic(null)">All Topics</button>';
+  topics.forEach(t => {
+    nav.innerHTML += `<button class="topic-btn${activeTopic===t.id?' active':''}" onclick="setTopic('${t.id}')">${t.title.split('(')[0].trim()}</button>`;
+  });
+
+  const ft = filterText.toLowerCase();
+  let html = '';
+  let totalShown = 0;
+
+  topics.forEach(t => {
+    if (activeTopic && activeTopic !== t.id) return;
+    const filteredCmds = t.cmds.filter(c =>
+      !ft || c.cmd.toLowerCase().includes(ft) || c.why.toLowerCase().includes(ft) || c.type.toLowerCase().includes(ft)
+    );
+    if (filteredCmds.length === 0) return;
+    totalShown += filteredCmds.length;
+
+    const isOpen = !!ft || activeTopic === t.id || activeTopic === null;
+    html += `<div class="topic-section">
+      <div class="topic-header${isOpen?' open':''}" onclick="toggleSection(this)" style="background:${t.color}">
+        ${t.title} <span class="count-badge">${filteredCmds.length} commands</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="topic-body${isOpen?' open':''}">
+        <table class="cmd-table">
+          <thead><tr><th style="width:14%">Type</th><th style="width:38%">Command</th><th>What it does & why you use it</th></tr></thead>
+          <tbody>`;
+    filteredCmds.forEach(c => {
+      html += `<tr>
+        <td><span class="${typeColors[c.type]}">${typeLabels[c.type]}</span></td>
+        <td><code>${c.cmd}</code></td>
+        <td>${c.why}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+
+  if (totalShown === 0) html = '<div class="no-results">No commands found for "' + filterText + '" — try a different keyword.</div>';
+  content.innerHTML = html;
+}
+
+function toggleSection(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+
+let currentTopic = null;
+function setTopic(id) {
+  currentTopic = id;
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderAll(document.getElementById('search').value, currentTopic);
+  if (id) setTimeout(()=>{const el=document.querySelector('.topic-section');if(el)el.scrollIntoView({behavior:'smooth'})},50);
+}
+
+function filterAll() {
+  renderAll(document.getElementById('search').value, currentTopic);
+}
+
+renderAll('', null);
+</script>
+</body>
+</html>
