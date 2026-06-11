@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCNA Quick Test</title>
+  <link rel="stylesheet" href="quick-test.css">
+
+</head>
+
+<body>
+
+  <div class="complete-banner">
+    🏆 CCNA All Domains — Quick Test 🏆
+    <br>( 10 Random Questions)
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="v" id="s-total">10</div>
+      <div class="l">Total</div>
+    </div>
+
+    <div class="stat correct">
+      <div class="v" id="s-correct">0</div>
+      <div class="l">Correct</div>
+    </div>
+
+    <div class="stat wrong">
+      <div class="v" id="s-wrong">0</div>
+      <div class="l">Wrong</div>
+    </div>
+
+    <div class="stat skip">
+      <div class="v" id="s-unattempted">10</div>
+      <div class="l">Remaining</div>
+    </div>
+
+    <div class="stat">
+      <div class="v" id="s-pct">0%</div>
+      <div class="l">Score</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-fill" id="prog"></div>
+  </div>
+
+  <div class="global-btns">
+    <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All</button>
+    <button class="gbtn gbtn-green" onclick="showAllExp()">Show Explanations</button>
+    <button class="gbtn gbtn-gray" onclick="location.reload()">New Test</button>
+    <button class="gbtn gbtn-red" onclick="showScore()">Final Score</button>
+  </div>
+
+  <div id="qlist"></div>
+
+  <script src="q-bank.js"></script>
+  <script>
+
+    // ============================
+    // QUESTION BANK
+    // Add more questions here
+    // ============================
+
+
+    // ============================
+    // RANDOM 10 QUESTIONS
+    // ============================
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    if (!window.bank) {
+      alert("questions.js not loaded properly");
+    }
+
+    const qs = shuffle([...bank]).slice(0, 10);
+
+    qs.forEach(q => {
+
+      const correct = q.opts[q.ans];
+
+      const opts = q.opts.map(o => ({
+        text: o,
+        correct: o === correct
+      }));
+
+      shuffle(opts);
+
+      q.opts = opts.map(x => x.text);
+      q.ans = opts.findIndex(x => x.correct);
+    });
+
+    let uA = {};
+    let sub = {};
+
+    // ============================
+
+    function render() {
+
+      let h = '';
+
+      qs.forEach((q, i) => {
+
+        const submitted = sub[i];
+        const correct = submitted && uA[i] === q.ans;
+        const wrong = submitted && uA[i] !== q.ans;
+
+        let card = 'q-card';
+
+        if (correct) card += ' answered-correct';
+        if (wrong) card += ' answered-wrong';
+
+        h += `
+    <div class="${card}">
+
+      <div class="q-header">
+        <span class="q-num">Q${i + 1}</span>
+      </div>
+
+      <div class="q-text">${q.q}</div>
+
+      <div class="options">
+    `;
+
+        ['A', 'B', 'C', 'D'].forEach((L, oi) => {
+
+          let cls = 'opt';
+
+          if (uA[i] === oi && !submitted)
+            cls += ' selected';
+
+          if (submitted && oi === q.ans)
+            cls += ' correct-ans';
+
+          if (submitted && uA[i] === oi && oi !== q.ans)
+            cls += ' wrong-ans';
+
+          h += `
+      <div class="${cls}"
+      ${submitted ? '' : `onclick="selectAns(${i},${oi})"`}>
+        <span class="opt-letter">${L}</span>
+        ${q.opts[oi]}
+      </div>
+      `;
+        });
+
+        h += `
+      </div>
+
+      <div class="btn-row">
+        ${!submitted ?
+            `<button class="btn btn-submit" onclick="submitQ(${i})">Submit</button>` : ''}
+
+        <button class="btn btn-show" onclick="toggleExp(${i})">
+        Explanation
+        </button>
+      </div>
+
+      <div class="explanation" id="ex${i}">
+        <strong>Answer:</strong> ${q.exp}
+      </div>
+
+    </div>`;
+      });
+
+      document.getElementById('qlist').innerHTML = h;
+
+      updateStats();
+    }
+
+    // ============================
+
+    function selectAns(i, o) {
+      if (sub[i]) return;
+      uA[i] = o;
+      render();
+    }
+
+    function submitQ(i) {
+      if (uA[i] === undefined) {
+        alert('Select an answer first');
+        return;
+      }
+
+      sub[i] = true;
+      render();
+    }
+
+    function submitAll() {
+      qs.forEach((q, i) => {
+        if (uA[i] !== undefined) sub[i] = true;
+      });
+
+      render();
+    }
+
+    function toggleExp(i) {
+      document.getElementById('ex' + i)
+        .classList.toggle('show');
+    }
+
+    function showAllExp() {
+      document.querySelectorAll('.explanation')
+        .forEach(e => e.classList.add('show'));
+    }
+
+    function updateStats() {
+
+      const total = qs.length;
+
+      const attempted = Object.keys(sub).length;
+
+      const correct = qs.filter((q, i) =>
+        sub[i] && uA[i] === q.ans
+      ).length;
+
+      const wrong = attempted - correct;
+
+      const remaining = total - attempted;
+
+      const pct = Math.round((correct / total) * 100);
+
+      document.getElementById('s-total').textContent = total;
+      document.getElementById('s-correct').textContent = correct;
+      document.getElementById('s-wrong').textContent = wrong;
+      document.getElementById('s-unattempted').textContent = remaining;
+      document.getElementById('s-pct').textContent = pct + '%';
+
+      document.getElementById('prog').style.width =
+        (attempted / total * 100) + '%';
+    }
+
+    function showScore() {
+
+      const total = qs.length;
+
+      const correct = qs.filter((q, i) =>
+        sub[i] && uA[i] === q.ans
+      ).length;
+
+      const pct = Math.round((correct / total) * 100);
+
+      alert(`Score: ${correct}/${total} (${pct}%)`);
+    }
+
+    render();
+
+  </script>
+
+</body>
+
+
+</html>
