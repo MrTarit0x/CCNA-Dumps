@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: transparent;
+      color: var(--fg, #1a1a1a);
+      font-size: 13px;
+      padding: 10px
+    }
+
+    h1 {
+      font-size: 15px;
+      color: var(--accent, #5B3FD4);
+      margin-bottom: 4px;
+      border-bottom: 2px solid var(--accent, #5B3FD4);
+      padding-bottom: 6px
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+      flex-wrap: wrap
+    }
+
+    .stat {
+      background: var(--surface2, #f0eeff);
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-align: center;
+      flex: 1;
+      min-width: 70px
+    }
+
+    .stat .v {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .stat .l {
+      font-size: 10px;
+      color: #888
+    }
+
+    .stat.correct .v {
+      color: #16a34a
+    }
+
+    .stat.wrong .v {
+      color: #dc2626
+    }
+
+    .stat.skip .v {
+      color: #d97706
+    }
+
+    .progress-wrap {
+      background: #e5e7eb;
+      border-radius: 10px;
+      height: 10px;
+      margin-bottom: 10px
+    }
+
+    .progress-fill {
+      height: 10px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #5B3FD4, #1D9E75);
+      transition: width 0.3s
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .filter-bar input {
+      flex: 1;
+      min-width: 160px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1.5px solid var(--accent, #5B3FD4);
+      font-size: 12px;
+      background: var(--surface, #f8f8f8);
+      color: var(--fg, #1a1a1a)
+    }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      border: 1.5px solid #aaa;
+      background: transparent;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555
+    }
+
+    .filter-btn.active {
+      background: var(--accent, #5B3FD4);
+      color: #fff;
+      border-color: var(--accent, #5B3FD4)
+    }
+
+    .q-card {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s
+    }
+
+    .q-card.answered-correct {
+      border-color: #16a34a
+    }
+
+    .q-card.answered-wrong {
+      border-color: #dc2626
+    }
+
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 14px 6px;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .q-num {
+      font-weight: 800;
+      color: var(--accent, #5B3FD4);
+      font-size: 12px;
+      flex-shrink: 0
+    }
+
+    .q-category {
+      font-size: 10px;
+      background: var(--accent, #5B3FD4);
+      color: #fff;
+      border-radius: 10px;
+      padding: 2px 8px;
+      flex-shrink: 0
+    }
+
+    .q-text {
+      padding: 0 14px 10px;
+      font-weight: 600;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .options {
+      padding: 0 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      border: 1.5px solid #e5e7eb;
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1.4
+    }
+
+    .opt:hover {
+      border-color: var(--accent, #5B3FD4);
+      background: var(--surface2, #f0eeff)
+    }
+
+    .opt.selected {
+      border-color: var(--accent, #5B3FD4);
+      background: var(--surface2, #f0eeff)
+    }
+
+    .opt.correct-ans {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      font-weight: 700
+    }
+
+    .opt.wrong-ans {
+      border-color: #dc2626;
+      background: #fef2f2
+    }
+
+    .opt-letter {
+      font-weight: 800;
+      color: var(--accent, #5B3FD4);
+      flex-shrink: 0;
+      width: 16px
+    }
+
+    .opt.correct-ans .opt-letter {
+      color: #16a34a
+    }
+
+    .opt.wrong-ans .opt-letter {
+      color: #dc2626
+    }
+
+    .explanation {
+      margin: 0 14px 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      background: var(--surface2, #f0faf8);
+      border-left: 4px solid #1D9E75;
+      font-size: 12px;
+      line-height: 1.6;
+      display: none
+    }
+
+    .explanation.show {
+      display: block
+    }
+
+    .explanation strong {
+      color: #1D9E75
+    }
+
+    .code-block {
+      background: #1e1e2e;
+      color: #a6e3a1;
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      margin: 4px 0;
+      display: block;
+      white-space: pre-wrap
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 12px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .btn-submit {
+      background: var(--accent, #5B3FD4);
+      color: #fff
+    }
+
+    .btn-submit:hover {
+      opacity: 0.85
+    }
+
+    .btn-show {
+      background: #1D9E75;
+      color: #fff
+    }
+
+    .btn-show:hover {
+      opacity: 0.85
+    }
+
+    .btn-reset-q {
+      background: #e5e7eb;
+      color: #555
+    }
+
+    .result-badge {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .rb-correct {
+      background: #dcfce7;
+      color: #16a34a
+    }
+
+    .rb-wrong {
+      background: #fee2e2;
+      color: #dc2626
+    }
+
+    .global-btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap
+    }
+
+    .gbtn {
+      padding: 6px 16px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .gbtn-primary {
+      background: var(--accent, #5B3FD4);
+      color: #fff
+    }
+
+    .gbtn-green {
+      background: #16a34a;
+      color: #fff
+    }
+
+    .gbtn-red {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .gbtn-gray {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .tag-hot {
+      background: #e05a2b;
+      color: #fff;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      margin-left: 4px
+    }
+
+    .score-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      text-align: center;
+      min-width: 280px;
+      max-width: 90vw
+    }
+
+    .score-modal h2 {
+      font-size: 22px;
+      margin-bottom: 8px;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .score-modal .big {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99
+    }
+
+    .cat-header {
+      background: var(--surface2, #f0eeff);
+      padding: 6px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--accent, #5B3FD4);
+      border-bottom: 1px solid #e5e7eb;
+      letter-spacing: 0.5px
+    }
+
+            .complete-banner {
+      background: linear-gradient(135deg, #5B3FD4, #1D9E75);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="complete-banner">🏆 Domain 2: 🎯 CCNA Network Access — 100 Exam MCQ</div>
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="v" id="s-total">100</div>
+      <div class="l">Total</div>
+    </div>
+    <div class="stat correct">
+      <div class="v" id="s-correct">0</div>
+      <div class="l">Correct</div>
+    </div>
+    <div class="stat wrong">
+      <div class="v" id="s-wrong">0</div>
+      <div class="l">Wrong</div>
+    </div>
+    <div class="stat skip">
+      <div class="v" id="s-unattempted">100</div>
+      <div class="l">Remaining</div>
+    </div>
+    <div class="stat">
+      <div class="v" id="s-pct">0%</div>
+      <div class="l">Score</div>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="prog" style="width:0%"></div>
+  </div>
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="🔍 Search by topic or keyword..." oninput="applyFilters()">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('unattempted',this)">Remaining</button>
+    <button class="filter-btn" onclick="setFilter('correct',this)">✓ Correct</button>
+    <button class="filter-btn" onclick="setFilter('wrong',this)">✗ Wrong</button>
+  </div>
+  <div class="global-btns">
+    <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All</button>
+    <button class="gbtn gbtn-green" onclick="revealAll()">Show All Explanations</button>
+    <button class="gbtn gbtn-gray" onclick="resetAll()">Reset Quiz</button>
+    <button class="gbtn gbtn-red" onclick="showScore()">📊 Score</button>
+  </div>
+  <div id="qlist"></div>
+
+  <script>
+    const qs = [
+      // ─── VLANs ───────────────────────────────────────────────────────────────
+      { cat: "VLANs", hot: 1, q: "Which VLAN is the default VLAN on a Cisco switch and cannot be deleted or renamed?", opts: ["VLAN 0", "VLAN 1", "VLAN 1002", "VLAN 4094"], ans: 1, exp: "VLAN 1 is the default VLAN on all Cisco switches. All ports belong to VLAN 1 by default. It cannot be deleted, renamed, or deactivated. Security best practice: move all used ports off VLAN 1." },
+      { cat: "VLANs", hot: 1, q: "What is the valid range for normal-range VLANs on a Cisco switch?", opts: ["1–1005", "1–4094", "2–1001", "1006–4094"], ans: 0, exp: "Normal-range VLANs: 1–1005. VLANs 1002–1005 are reserved for legacy Token Ring and FDDI. Extended-range VLANs: 1006–4094 (require VTP transparent or off mode)." },
+      { cat: "VLANs", hot: 1, q: "A switch port is configured as an access port assigned to VLAN 10. A PC sends a frame. How does the switch handle the VLAN tag?", opts: ["Tags the frame with VLAN 10 and forwards it", "Forwards the frame untagged within VLAN 10", "Drops the frame — access ports don't support VLANs", "Adds a 802.1Q header and sends to all VLANs"], ans: 1, exp: "Access ports receive untagged frames from end devices. The switch internally associates the frame with VLAN 10 for forwarding decisions but does NOT add an 802.1Q tag. Tags are only added/removed on trunk ports." },
+      { cat: "VLANs", q: "Which command correctly assigns switch port Fa0/5 to VLAN 20?", opts: ["switchport vlan 20", "switchport access vlan 20", "vlan 20 port Fa0/5", "switchport trunk vlan 20"], ans: 1, exp: "Under interface config mode: 'switchport mode access' first, then 'switchport access vlan 20'. The 'switchport access vlan' command assigns the port to the specified VLAN." },
+      { cat: "VLANs", hot: 1, q: "A network has an IP phone and a PC connected to the same switch port. Which two commands configure this correctly?", opts: ["switchport access vlan 10 and switchport trunk vlan 20", "switchport access vlan 10 and switchport voice vlan 20", "switchport mode trunk and switchport trunk allowed vlan 10,20", "switchport mode access and switchport trunk vlan 20"], ans: 1, exp: "'switchport access vlan 10' sets the data VLAN for the PC. 'switchport voice vlan 20' sets the voice VLAN for the IP phone. The phone tags its own traffic with VLAN 20; the PC's traffic is untagged on VLAN 10." },
+      { cat: "VLANs", q: "What happens to a switch port's VLAN assignment if you delete a VLAN from the VLAN database while ports are still assigned to it?", opts: ["Ports are automatically moved to VLAN 1", "Ports become inactive (associated VLAN doesn't exist)", "Ports are moved to the native VLAN", "The VLAN deletion fails"], ans: 1, exp: "If you delete a VLAN that has ports assigned to it, those ports become inactive — they're still 'assigned' to the deleted VLAN but can't pass traffic. You must reassign the ports to an active VLAN." },
+      { cat: "VLANs", q: "Which VLAN range requires VTP transparent mode or VTP off to be configured?", opts: ["1–1005", "1002–1005", "1006–4094", "2–1001"], ans: 2, exp: "Extended-range VLANs (1006–4094) require VTP transparent mode or VTP off. They are not stored in the vlan.dat file and are only saved in running-config (which you must save manually)." },
+      { cat: "VLANs", hot: 1, q: "An administrator configures inter-VLAN routing using a Layer 3 switch. Which command MUST be enabled on the switch for routing between VLANs?", opts: ["switchport mode trunk", "ip routing", "vlan routing enable", "interface vlan"], ans: 1, exp: "'ip routing' enables the Layer 3 switch to route packets between different VLANs using its SVI (Switch Virtual Interface) addresses. Without this command, the switch forwards at Layer 2 only." },
+      { cat: "VLANs", q: "What is the purpose of a Switch Virtual Interface (SVI)?", opts: ["To create a trunk link between switches", "To provide a routable IP interface for a VLAN on a Layer 3 switch", "To assign a port to a VLAN", "To connect an AP to the switch"], ans: 1, exp: "An SVI (interface vlan X) is a virtual Layer 3 interface on a Layer 3 switch. Assigning an IP address to the SVI makes that VLAN routable — it becomes the default gateway for hosts in that VLAN." },
+      { cat: "VLANs", q: "Which show command displays all VLANs and the ports assigned to each VLAN?", opts: ["show interfaces switchport", "show vlan", "show vlan brief", "show mac address-table"], ans: 2, exp: "'show vlan brief' displays a concise table of all VLANs — VLAN number, name, status, and which ports belong to each VLAN. The most commonly used VLAN verification command." },
+      // ─── Trunking & 802.1Q ────────────────────────────────────────────────────
+      { cat: "Trunking & 802.1Q", hot: 1, q: "Which IEEE standard defines VLAN tagging on trunk links?", opts: ["IEEE 802.3af", "IEEE 802.1D", "IEEE 802.1Q", "IEEE 802.3at"], ans: 2, exp: "IEEE 802.1Q defines the standard for VLAN tagging. It inserts a 4-byte tag into the Ethernet frame header containing the VLAN ID (12 bits, supporting 4096 VLANs), priority bits, and TPID (0x8100)." },
+      { cat: "Trunking & 802.1Q", hot: 1, q: "What is the size of the 802.1Q VLAN tag inserted into an Ethernet frame?", opts: ["2 bytes", "4 bytes", "8 bytes", "12 bytes"], ans: 1, exp: "The 802.1Q tag is 4 bytes (32 bits): 2 bytes TPID (0x8100) + 3 bits PCP (priority) + 1 bit DEI + 12 bits VLAN ID. This tag is inserted between the source MAC and EtherType fields." },
+      { cat: "Trunking & 802.1Q", hot: 1, q: "Traffic on which VLAN is sent UNTAGGED across an 802.1Q trunk?", opts: ["VLAN 1 always", "The management VLAN", "The native VLAN", "The data VLAN"], ans: 2, exp: "The native VLAN is transmitted untagged across an 802.1Q trunk. Default native VLAN = VLAN 1. The native VLAN must match on BOTH ends of the trunk or traffic is misassigned — a common troubleshooting scenario." },
+      { cat: "Trunking & 802.1Q", hot: 1, q: "SW1's trunk has native VLAN 1. SW2's trunk has native VLAN 10. What is the result?", opts: ["Trunking works normally", "Native VLAN mismatch — frames tagged with VLAN 10 on SW2 may be placed on VLAN 1 on SW1", "The trunk is administratively shut down automatically", "Both switches revert to VLAN 1"], ans: 1, exp: "Native VLAN mismatch causes traffic to be misassigned. Untagged frames from SW2's VLAN 10 arrive at SW1 and are placed on VLAN 1 (SW1's native). CDP sends a native VLAN mismatch warning. This is a serious misconfiguration." },
+      { cat: "Trunking & 802.1Q", hot: 1, q: "Which command changes the native VLAN on a trunk port to VLAN 99?", opts: ["switchport trunk native 99", "switchport native vlan 99", "switchport trunk native vlan 99", "vlan 99 native"], ans: 2, exp: "'switchport trunk native vlan 99' changes the native VLAN to 99. Run this under the trunk interface. Both ends of the trunk MUST have the same native VLAN or CDP will report a mismatch warning." },
+      { cat: "Trunking & 802.1Q", q: "Which command restricts a trunk to carry only VLANs 10, 20, and 30?", opts: ["switchport trunk vlan 10,20,30", "switchport trunk allowed vlan 10,20,30", "switchport access vlan 10,20,30", "trunk allowed vlan 10,20,30"], ans: 1, exp: "'switchport trunk allowed vlan 10,20,30' restricts the trunk to only carry those VLANs. Using 'switchport trunk allowed vlan add X' adds to the list; without 'add', the command REPLACES the list." },
+      { cat: "Trunking & 802.1Q", hot: 1, q: "What is the security risk of leaving the native VLAN as VLAN 1?", opts: ["Trunks won't form", "VLAN hopping attacks — attackers send double-tagged frames to jump VLANs", "Spanning tree fails", "CDP stops working"], ans: 1, exp: "VLAN hopping attack: attacker sends a double-tagged frame (outer tag = native VLAN 1, inner tag = target VLAN). The first switch strips tag 1 (native, untagged), the second switch sees the inner tag and delivers to target VLAN. Mitigation: change native VLAN to unused VLAN." },
+      { cat: "Trunking & 802.1Q", q: "Which command shows the trunk status, native VLAN, and allowed VLANs on all trunk ports?", opts: ["show vlan brief", "show interfaces trunk", "show interfaces switchport", "show trunk status"], ans: 1, exp: "'show interfaces trunk' displays all trunk interfaces with: encapsulation, native VLAN, allowed VLANs, and VLANs actually forwarding traffic. Critical for trunk troubleshooting." },
+      { cat: "Trunking & 802.1Q", q: "What does the 'switchport trunk allowed vlan add 40' command do differently from 'switchport trunk allowed vlan 40'?", opts: ["They are identical", "'add' appends VLAN 40 to the existing list; without 'add', VLAN 40 REPLACES the entire allowed list", "'add' removes VLAN 40 from the list", "'add' requires a reload to take effect"], ans: 1, exp: "Without 'add', 'switchport trunk allowed vlan 40' REPLACES the entire allowed VLAN list with just VLAN 40 — all other VLANs stop passing! Always use 'add' when appending to the existing list." },
+      { cat: "Trunking & 802.1Q", q: "A Layer 3 switch requires which additional command before 'switchport mode trunk' can be configured?", opts: ["ip routing", "switchport", "switchport trunk encapsulation dot1q", "no shutdown"], ans: 2, exp: "On Layer 3 switches, interfaces default to routed (Layer 3) mode. You must run 'switchport' first to make it a Layer 2 port, then 'switchport trunk encapsulation dot1q' before setting it to trunk mode." },
+      // ─── DTP ─────────────────────────────────────────────────────────────────
+      { cat: "DTP (Dynamic Trunking Protocol)", hot: 1, q: "SW1 port is 'dynamic auto' and SW2 port is 'dynamic auto'. What is the result?", opts: ["Trunk forms", "Access link forms — neither side initiates", "Link goes down", "Trunk forms after 30 seconds"], ans: 1, exp: "Dynamic auto + dynamic auto = ACCESS link. Neither side sends DTP frames to initiate trunking. Both are passively waiting. You need at least one side as 'trunk' or 'dynamic desirable' to form a trunk." },
+      { cat: "DTP (Dynamic Trunking Protocol)", hot: 1, q: "Which DTP mode combination forms a trunk link?", opts: ["access + trunk", "access + access", "dynamic auto + dynamic auto", "dynamic auto + dynamic desirable"], ans: 3, exp: "Dynamic auto + dynamic desirable = TRUNK. 'Desirable' actively sends DTP frames; 'auto' responds. Other trunk-forming combos: trunk+trunk, trunk+dynamic auto, trunk+dynamic desirable, desirable+desirable." },
+      { cat: "DTP (Dynamic Trunking Protocol)", hot: 1, q: "Which command disables DTP on a switch port to prevent unauthorized trunk negotiation?", opts: ["switchport mode access", "switchport nonegotiate", "no switchport trunk", "no dtp enable"], ans: 1, exp: "'switchport nonegotiate' disables DTP — the port stops sending DTP frames. Use on ports connected to end devices or untrusted networks. Always combine with 'switchport mode access' for user-facing ports." },
+      { cat: "DTP (Dynamic Trunking Protocol)", q: "What is the default DTP mode on a Cisco switch port?", opts: ["dynamic desirable", "trunk", "dynamic auto", "access"], ans: 0, exp: "Most Cisco catalyst switches default to 'dynamic desirable' — the port actively tries to form a trunk by sending DTP frames. This is why connecting two Cisco switches often auto-forms a trunk without configuration." },
+      { cat: "DTP (Dynamic Trunking Protocol)", q: "A port is configured as 'switchport mode trunk'. What happens if the other side is 'switchport mode access'?", opts: ["Trunk forms", "Access link — the access side wins", "The trunk side wins but data is corrupted", "The link goes down"], ans: 1, exp: "If one side is trunk and the other is access, the link stays up but NO trunking occurs. The access port doesn't tag frames. The trunk port expects tagged frames. Communication may work but only for the access port's VLAN." },
+      // ─── Router on a Stick ────────────────────────────────────────────────────
+      { cat: "Inter-VLAN Routing", hot: 1, q: "In a router-on-a-stick configuration, what must be configured on the router interface for each VLAN?", opts: ["A separate physical interface", "A subinterface with 'encapsulation dot1q VLAN-ID'", "A loopback interface", "A static route per VLAN"], ans: 1, exp: "Router-on-a-stick uses ONE physical interface with multiple LOGICAL subinterfaces (Gi0/0.10, Gi0/0.20). Each subinterface gets 'encapsulation dot1Q [vlan-id]' and an IP address. The physical interface must be connected to a trunk port on the switch." },
+      { cat: "Inter-VLAN Routing", q: "Which command on a subinterface tells the router which VLAN's traffic to process?", opts: ["vlan 10", "switchport access vlan 10", "encapsulation dot1Q 10", "ip vlan 10"], ans: 2, exp: "'encapsulation dot1Q 10' on a subinterface tells the router to process frames tagged with VLAN 10 on this subinterface. Without this, the router doesn't know which VLAN to associate with the subinterface." },
+      { cat: "Inter-VLAN Routing", q: "What is the advantage of using a Layer 3 switch with SVIs for inter-VLAN routing compared to router-on-a-stick?", opts: ["Cheaper hardware", "Higher throughput — routing done in hardware ASIC not software CPU", "Easier to configure", "Supports more VLANs"], ans: 1, exp: "Layer 3 switches perform inter-VLAN routing in hardware (ASIC) at wire speed. Router-on-a-stick sends all inter-VLAN traffic through ONE physical link (bottleneck) and uses the router's CPU (slower). L3 switch is faster and more scalable." },
+      // ─── CDP & LLDP ───────────────────────────────────────────────────────────
+      { cat: "CDP & LLDP", hot: 1, q: "What information does CDP provide about neighboring Cisco devices? (Choose the BEST answer)", opts: ["IP routing tables", "Hostname, IP address, platform, interface, capabilities, and IOS version", "Only MAC addresses", "Only the device's management VLAN"], ans: 1, exp: "CDP reveals: device ID (hostname), IP address, platform/model, local and remote interface, capabilities (router/switch/phone), and IOS software version. The IOS version disclosure is a security concern — attackers can look up known vulnerabilities for that version." },
+      { cat: "CDP & LLDP", hot: 1, q: "What is the key difference between CDP and LLDP?", opts: ["CDP uses TCP, LLDP uses UDP", "CDP is Cisco proprietary; LLDP is IEEE 802.1AB open standard", "CDP supports IPv6, LLDP does not", "CDP is Layer 3, LLDP is Layer 2"], ans: 1, exp: "CDP = Cisco Discovery Protocol (Cisco proprietary, enabled by default on Cisco devices). LLDP = Link Layer Discovery Protocol (IEEE 802.1AB open standard, works with any vendor, disabled by default on Cisco devices)." },
+      { cat: "CDP & LLDP", q: "An engineer connects a Cisco switch to a Juniper switch. Which discovery protocol should be used to discover the Juniper device?", opts: ["CDP", "LLDP", "Both CDP and LLDP", "Neither — different vendors can't discover each other"], ans: 1, exp: "LLDP (IEEE 802.1AB) is vendor-neutral and supported by Juniper, HP, Cisco, and others. CDP only works between Cisco devices. Enable LLDP on both sides with 'lldp run'." },
+      { cat: "CDP & LLDP", q: "Which command enables LLDP globally on a Cisco device?", opts: ["cdp run", "lldp enable", "lldp run", "no cdp run"], ans: 2, exp: "'lldp run' enables LLDP globally. Unlike CDP (enabled by default), LLDP must be manually enabled. Then optionally configure 'lldp transmit' and 'lldp receive' per interface." },
+      { cat: "CDP & LLDP", hot: 1, q: "A security policy requires disabling CDP on all ports facing the internet. Which command disables CDP on a SINGLE interface?", opts: ["no cdp run", "no cdp enable", "cdp disable", "no cdp interface"], ans: 1, exp: "'no cdp enable' (under interface config) disables CDP on that specific interface only. 'no cdp run' disables CDP globally on the entire device. Use interface-level for selective disabling." },
+      { cat: "CDP & LLDP", q: "What is the default CDP hello timer and holdtime?", opts: ["30 seconds hello, 90 seconds holdtime", "60 seconds hello, 180 seconds holdtime", "10 seconds hello, 40 seconds holdtime", "60 seconds hello, 120 seconds holdtime"], ans: 1, exp: "CDP defaults: hello every 60 seconds, holdtime 180 seconds (3× hello). If no CDP packet received within 180 seconds, the neighbor entry is removed. LLDP defaults: 30 sec hello, 120 sec holdtime." },
+      { cat: "CDP & LLDP", q: "Which show command displays the IOS version of a directly connected Cisco neighbor?", opts: ["show cdp neighbors", "show cdp neighbors detail", "show lldp neighbors", "show version"], ans: 1, exp: "'show cdp neighbors detail' (not just 'show cdp neighbors') includes the software version (IOS version) of each neighbor. The basic 'show cdp neighbors' only shows platform and interface info." },
+      // ─── EtherChannel ─────────────────────────────────────────────────────────
+      { cat: "EtherChannel", hot: 1, q: "SW1 uses 'channel-group 1 mode passive' and SW2 uses 'channel-group 1 mode passive'. What is the result?", opts: ["EtherChannel forms using LACP", "EtherChannel forms using PAgP", "No EtherChannel — passive+passive does NOT form a channel", "EtherChannel forms as static"], ans: 2, exp: "LACP passive = waits for LACP packets, won't initiate. Passive + passive = both waiting, neither starts → NO channel. At least ONE side must be 'active' (sends LACP). Active+active or active+passive = channel forms." },
+      { cat: "EtherChannel", hot: 1, q: "Which EtherChannel protocol is an IEEE open standard?", opts: ["PAgP", "LACP", "Static (on)", "ISL"], ans: 1, exp: "LACP (Link Aggregation Control Protocol) is IEEE 802.3ad — open standard, works between different vendor switches. PAgP (Port Aggregation Protocol) is Cisco proprietary. Static 'on' uses no protocol." },
+      { cat: "EtherChannel", hot: 1, q: "An EtherChannel is configured but not forming. The admin checks 'show etherchannel summary' and sees '(SD)'. What does this mean?", opts: ["S=Layer 2, D=Down — the port-channel is Layer 2 but not operational", "S=Standby, D=Dynamic", "S=Secure, D=Disabled", "The channel is forming"], ans: 0, exp: "EtherChannel flags: S=Layer 2, U=in Use, D=Down, I=Individual (not bundled). '(SU)' = Layer 2 and working. '(SD)' = Layer 2 but DOWN — the channel failed to form. Check member port configs for mismatches." },
+      { cat: "EtherChannel", hot: 1, q: "What are the requirements for member interfaces in an EtherChannel? (Select the MOST complete answer)", opts: ["Same VLAN only", "Same speed, duplex, VLAN configuration, and trunk settings", "Same MAC address", "Same IP address"], ans: 1, exp: "All member interfaces MUST have identical: speed, duplex, VLAN assignments (access VLAN or trunk allowed VLANs), native VLAN, and mode (all access or all trunk). ANY mismatch prevents the channel from forming." },
+      { cat: "EtherChannel", q: "Which command verifies the status and member ports of EtherChannel group 1?", opts: ["show interfaces port-channel 1", "show etherchannel summary", "show lacp neighbor", "show channel-group 1"], ans: 1, exp: "'show etherchannel summary' is the primary EtherChannel verification command. It shows: group number, protocol (LACP/PAgP/none), port-channel interface, member ports, and status flags (SU=working, SD=down)." },
+      { cat: "EtherChannel", q: "How does Spanning Tree Protocol view an EtherChannel bundle?", opts: ["As multiple individual links — one per physical interface", "As a single logical link — one port-channel", "As a trunk link automatically", "STP doesn't interact with EtherChannel"], ans: 1, exp: "STP sees the EtherChannel bundle as a SINGLE logical link. This is a major benefit — no ports are blocked for loop prevention within the bundle. Without EtherChannel, STP would block all but one of the redundant links." },
+      { cat: "EtherChannel", q: "An EtherChannel is configured with 'mode on' on SW1 and 'mode active' on SW2. What happens?", opts: ["Channel forms using LACP", "Channel forms using PAgP", "No channel — 'on' cannot mix with LACP or PAgP", "Channel forms as static"], ans: 2, exp: "'on' means static EtherChannel — no negotiation protocol. If one side is 'on' and the other uses LACP (active/passive) or PAgP (desirable/auto), the channel CANNOT form. Both sides must use 'on' for static." },
+      { cat: "EtherChannel", q: "What is the default load-balancing method for EtherChannel on Cisco switches?", opts: ["Round-robin", "Source and destination IP", "Source and destination MAC", "Random"], ans: 2, exp: "Default load-balancing: source-destination MAC (src-dst-mac). Traffic between the same pair of MACs always uses the same physical link. Change with: 'port-channel load-balance src-dst-ip' for IP-based balancing." },
+      { cat: "EtherChannel", q: "Where should trunk configuration (native VLAN, allowed VLANs) be configured in an EtherChannel?", opts: ["On each individual member interface", "On the port-channel (logical) interface", "On both — member interfaces AND port-channel", "On the switch's global config"], ans: 1, exp: "Trunk configuration should be applied to the PORT-CHANNEL interface, not individual member interfaces. The port-channel is the logical interface that represents the bundle. Member interfaces inherit the trunk settings." },
+      // ─── STP ──────────────────────────────────────────────────────────────────
+      { cat: "Spanning Tree Protocol", hot: 1, q: "Which switch becomes the root bridge in STP?", opts: ["The switch with the highest MAC address", "The switch with the lowest Bridge ID (priority + MAC)", "The switch with the most ports", "The switch configured first"], ans: 1, exp: "Root bridge election: lowest Bridge ID wins. Bridge ID = Priority (2 bytes) + MAC address (6 bytes). Default priority = 32768. If priorities are equal, lowest MAC address wins. Lower priority = better chance of being root." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "What are the valid STP port states in Rapid PVST+?", opts: ["Blocking, Listening, Learning, Forwarding, Disabled", "Discarding, Learning, Forwarding", "Blocking, Learning, Forwarding", "Up, Down, Learning"], ans: 1, exp: "Rapid PVST+ (802.1w) uses THREE states: Discarding (combines old Blocking+Listening), Learning (learns MACs, no forwarding), Forwarding (active). Classic STP had 5 states. Rapid PVST+ is faster — 1-5 sec vs 30-50 sec." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "A non-root switch selects its Root Port based on which criteria?", opts: ["Highest port number", "Lowest path cost to the root bridge", "Highest port priority", "Oldest port"], ans: 1, exp: "Root Port = the port with the LOWEST cumulative STP path cost to the root bridge. Each link has a cost based on bandwidth (1G=4, 100M=19, 10M=100). If costs tie: lowest neighbor Bridge ID, then lowest port ID." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "STP path cost for a 1 Gbps link with default reference bandwidth is:", opts: ["100", "19", "4", "1"], ans: 2, exp: "Default STP costs: 10Mbps=100, 100Mbps=19, 1Gbps=4, 10Gbps=2. These are based on 10^8/bandwidth. Problem: 100M, 1G, and 10G all have different costs only if reference bandwidth is updated. Fix with 'auto-cost reference-bandwidth 10000' (for OSPF) — for STP use 'spanning-tree pathcost method long'." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "Which STP feature immediately places an access port into forwarding state, bypassing Listening and Learning states?", opts: ["BPDU Guard", "Root Guard", "PortFast", "Loop Guard"], ans: 2, exp: "PortFast bypasses STP Listening and Learning states — the port goes directly to Forwarding. This eliminates the 30-second delay when a PC boots. ONLY use PortFast on ports connected to END DEVICES, never switch-to-switch links." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "What action does BPDU Guard take when a BPDU is received on a PortFast-enabled port?", opts: ["It ignores the BPDU", "It places the port in Discarding state", "It immediately error-disables (err-disables) the port", "It logs a warning and continues"], ans: 2, exp: "BPDU Guard immediately err-disables the port when ANY BPDU is received. This means a switch was connected to a PortFast port — a potential STP attack or miscabling. The port must be manually re-enabled (shutdown/no shutdown) or configured for auto-recovery." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "Which STP feature prevents a specific switch port from becoming the root bridge by blocking superior BPDUs?", opts: ["BPDU Guard", "Root Guard", "Loop Guard", "PortFast"], ans: 1, exp: "Root Guard: if a superior BPDU arrives on a Root Guard port, the port is placed in 'root-inconsistent' state (blocked). This protects the intended root bridge from being overthrown by a rogue switch. Apply on ports facing downstream switches." },
+      { cat: "Spanning Tree Protocol", q: "What is the default STP bridge priority on a Cisco switch?", opts: ["0", "4096", "32768", "65535"], ans: 2, exp: "Default bridge priority = 32768 (0x8000). STP priority must be in multiples of 4096. Lower = more likely to be root. Set manually: 'spanning-tree vlan X priority 4096' or use 'spanning-tree vlan X root primary' to auto-set." },
+      { cat: "Spanning Tree Protocol", q: "In Rapid PVST+, which port role is a blocked port that serves as a backup path to the root bridge?", opts: ["Designated Port", "Root Port", "Alternate Port", "Backup Port"], ans: 2, exp: "Alternate Port = blocked port that provides an alternate path to the root bridge (but through a different switch). Backup Port = blocked port on the same switch that provides a backup to a designated port. Alternate is more common in exam questions." },
+      { cat: "Spanning Tree Protocol", q: "A switch with priority 28672 is competing against a switch with priority 32768 for root bridge. Which wins?", opts: ["32768 — higher number wins", "28672 — lower number wins", "They tie and MAC address decides", "Neither — a new election occurs"], ans: 1, exp: "Lower Bridge ID = root bridge. Priority 28672 < 32768, so the switch with 28672 wins the root bridge election. 'spanning-tree vlan X root primary' sets priority to 24576 to ensure winning." },
+      { cat: "Spanning Tree Protocol", q: "Which command configures a switch as the secondary root bridge for VLAN 10?", opts: ["spanning-tree vlan 10 priority 0", "spanning-tree vlan 10 root primary", "spanning-tree vlan 10 root secondary", "spanning-tree vlan 10 priority 4096"], ans: 2, exp: "'spanning-tree vlan 10 root secondary' automatically sets the priority to 28672 — high enough to be backup root if the primary fails. 'root primary' sets to 24576 (or lower if needed to win election)." },
+      { cat: "Spanning Tree Protocol", q: "What is the purpose of Loop Guard in STP?", opts: ["Prevents unauthorized root bridge elections", "Protects against unidirectional link failures that could cause a port to transition from blocking to forwarding", "Disables STP on selected ports", "Blocks BPDU traffic on access ports"], ans: 1, exp: "Loop Guard protects against unidirectional link failures. If a non-designated port stops receiving BPDUs (link appears up but only one direction works), without Loop Guard it transitions to Forwarding — causing a loop. Loop Guard puts it in 'loop-inconsistent' state instead." },
+      { cat: "Spanning Tree Protocol", q: "Which STP variant creates a separate spanning tree instance for each VLAN?", opts: ["802.1D STP", "802.1w RSTP", "Rapid PVST+", "802.1s MSTP"], ans: 2, exp: "Rapid PVST+ (Rapid Per-VLAN Spanning Tree Plus) — Cisco's default — creates one STP instance per VLAN. This allows different VLANs to have different root bridges and different paths, enabling load balancing across uplinks." },
+      { cat: "Spanning Tree Protocol", hot: 1, q: "A host takes 30 seconds to get network access after plugging in. Which STP feature solves this?", opts: ["Root Guard", "BPDU Guard", "PortFast", "Loop Guard"], ans: 2, exp: "PortFast skips STP Listening (15 sec) and Learning (15 sec) states — the port goes directly to Forwarding in ~1 second. This eliminates the 30-second delay for end devices. Configure on all access ports connected to PCs/phones/printers." },
+      { cat: "Spanning Tree Protocol", q: "What does BPDU Filter do when configured globally on PortFast ports?", opts: ["Sends BPDUs but ignores received BPDUs", "Completely stops sending and receiving BPDUs", "Only filters inbound BPDUs", "Only filters outbound BPDUs"], ans: 0, exp: "BPDU Filter globally: stops sending BPDUs on PortFast ports BUT if a BPDU is RECEIVED, PortFast is disabled and normal STP operates. Interface-level BPDU Filter is different — it stops both sending AND receiving (more dangerous, can cause loops)." },
+      // ─── Wireless ─────────────────────────────────────────────────────────────
+      { cat: "Wireless Architecture", hot: 1, q: "What is the difference between an Autonomous AP and a Lightweight AP?", opts: ["Autonomous AP is managed by WLC; Lightweight AP is standalone", "Autonomous AP is standalone (self-configured); Lightweight AP is managed by WLC via CAPWAP", "Autonomous AP uses WPA3; Lightweight AP uses WPA2", "Autonomous AP is faster; Lightweight AP is cheaper"], ans: 1, exp: "Autonomous AP = standalone, configured individually via CLI or web GUI. Lightweight AP (LWAP) = managed centrally by a WLC via CAPWAP tunnels. LWAP has minimal local config — the WLC handles all policies, RF management, and security." },
+      { cat: "Wireless Architecture", hot: 1, q: "What protocol do Lightweight APs use to communicate with the WLC?", opts: ["LLDP", "CDP", "CAPWAP", "LWAPP"], ans: 2, exp: "CAPWAP (Control and Provisioning of Wireless Access Points) — the current standard (replaced older LWAPP). CAPWAP creates two tunnels: control tunnel (UDP 5246, encrypted) for management and data tunnel (UDP 5247) for client traffic." },
+      { cat: "Wireless Architecture", q: "Which AP mode allows local switching of traffic even when WLC connectivity is lost?", opts: ["Autonomous mode", "Monitor mode", "FlexConnect mode", "Sniffer mode"], ans: 2, exp: "FlexConnect (formerly HREAP) allows an AP to locally switch traffic even if the WLC connection fails (WLC disconnect mode). Normal operation: traffic goes through CAPWAP tunnel to WLC. Critical for branch offices with unreliable WAN." },
+      { cat: "Wireless Architecture", q: "An AP is configured to passively scan all channels for rogue APs and does not serve clients. Which AP mode is this?", opts: ["Local mode", "Monitor mode", "FlexConnect", "Sniffer mode"], ans: 1, exp: "Monitor mode: the AP dedicates itself to scanning the RF environment — detecting rogue APs, interference, and security threats. It does NOT serve wireless clients. Used for WIDS (Wireless Intrusion Detection)." },
+      { cat: "Wireless Architecture", hot: 1, q: "How should the switch port be configured for a connection to a WLC?", opts: ["Access port in management VLAN", "Trunk port — WLC carries traffic for multiple VLANs", "PortFast enabled access port", "Layer 3 routed port"], ans: 1, exp: "The switch port connecting to a WLC should be a TRUNK port. The WLC carries traffic for multiple WLANs/VLANs through this single connection. All client VLANs must be allowed on this trunk." },
+      { cat: "Wireless Architecture", q: "How should the switch port connecting to a Lightweight AP be configured?", opts: ["Trunk port with all VLANs", "Access port in the AP management VLAN", "Routed port with IP address", "EtherChannel port"], ans: 1, exp: "Lightweight APs connect to ACCESS ports (AP management VLAN). The AP sends all traffic through a CAPWAP tunnel to the WLC — the AP doesn't need a trunk. The WLC (not the AP) handles VLAN separation." },
+      { cat: "Wireless Architecture", q: "What does LAG (Link Aggregation Group) provide on a WLC?", opts: ["Multiple SSID support", "EtherChannel/port-channel — bundles multiple physical uplinks for redundancy and bandwidth", "VLAN trunking", "Client roaming between APs"], ans: 1, exp: "LAG on a WLC = EtherChannel — bundles multiple physical interface uplinks into one logical link. Provides redundancy (if one link fails, others keep working) and increased throughput. The switch side must also be configured for EtherChannel." },
+      // ─── Wireless Security ────────────────────────────────────────────────────
+      { cat: "Wireless Security", hot: 1, q: "Which wireless security protocol uses SAE (Simultaneous Authentication of Equals) to replace the PSK handshake?", opts: ["WEP", "WPA", "WPA2", "WPA3"], ans: 3, exp: "WPA3 uses SAE (also called Dragonfly handshake) instead of the 4-way PSK handshake. SAE provides forward secrecy and is immune to offline dictionary attacks — even capturing the handshake gives an attacker nothing useful." },
+      { cat: "Wireless Security", hot: 1, q: "Which encryption does WPA2 use?", opts: ["RC4 with TKIP", "DES with CBC", "AES with CCMP", "3DES with TKIP"], ans: 2, exp: "WPA2 uses AES (Advanced Encryption Standard) with CCMP (Counter Mode CBC-MAC Protocol). This is the current gold standard. WPA used TKIP (RC4-based) which is now considered insecure. Always select AES in WPA2 config, never TKIP." },
+      { cat: "Wireless Security", q: "What is WPA2-Enterprise authentication method?", opts: ["Pre-shared key (PSK/passphrase)", "802.1X with a RADIUS server", "SAE handshake", "Open authentication with MAC filtering"], ans: 1, exp: "WPA2-Enterprise uses 802.1X — each user authenticates with individual credentials (username/password or certificate) via a RADIUS server. The AP (authenticator) passes EAP messages between client and RADIUS. More secure and scalable than PSK." },
+      { cat: "Wireless Security", q: "In the WLC GUI, which Layer 2 security setting is correct for WPA2 with a shared passphrase?", opts: ["Layer 2: None, Auth: Open", "Layer 2: WPA+WPA2, Encryption: AES, Key Mgmt: PSK", "Layer 2: WEP, Key size: 128", "Layer 2: WPA+WPA2, Encryption: TKIP, Key Mgmt: PSK"], ans: 1, exp: "Correct WPA2-PSK settings in WLC GUI: Layer 2 Security = WPA+WPA2, WPA2 Policy checked, Encryption = AES (NOT TKIP), Auth Key Mgmt = PSK, then enter the passphrase. TKIP with WPA2 is wrong — always AES." },
+      { cat: "Wireless Security", hot: 1, q: "Which WPA3 improvement protects previously captured traffic if the password is later compromised?", opts: ["AES-256 encryption", "Forward Secrecy (via SAE)", "802.1X authentication", "RADIUS integration"], ans: 1, exp: "WPA3's SAE provides Perfect Forward Secrecy — each session uses unique encryption keys. Even if an attacker captures all traffic and later obtains the password, they CANNOT decrypt previously captured sessions. WPA2 doesn't have this." },
+      { cat: "Wireless Security", q: "What is the QoS profile in a WLC WLAN configuration for voice traffic?", opts: ["Bronze", "Silver", "Gold", "Platinum"], ans: 3, exp: "WLC QoS profiles: Platinum = highest priority (VoIP, voice), Gold = video, Silver = best effort data (default), Bronze = background/lowest priority. Always assign Platinum to voice WLANs for proper call quality." },
+      // ─── Device Management ────────────────────────────────────────────────────
+      { cat: "Device Management & Access", hot: 1, q: "Which remote management protocol provides encrypted access to a Cisco device?", opts: ["Telnet", "HTTP", "SSH", "SNMP"], ans: 2, exp: "SSH (Secure Shell) encrypts all management traffic including passwords. Telnet sends everything in cleartext — visible to anyone capturing network traffic. Always use SSH for remote device management." },
+      { cat: "Device Management & Access", hot: 1, q: "Which THREE items must be configured BEFORE SSH can be enabled on a Cisco device?", opts: ["IP address, VLAN, and enable secret", "Hostname, IP domain-name, and RSA crypto keys", "SSH version, username, and ACL", "Telnet disable, hostname, and enable password"], ans: 1, exp: "SSH requirements IN ORDER: (1) hostname — required for RSA key generation, (2) ip domain-name — combined with hostname to create the key label, (3) crypto key generate rsa modulus 2048 — generates the encryption keys. Without all three, SSH won't work." },
+      { cat: "Device Management & Access", hot: 1, q: "What does the command 'transport input ssh' on VTY lines accomplish?", opts: ["Enables Telnet only", "Enables SSH and Telnet", "Allows ONLY SSH connections — blocks Telnet", "Enables HTTPS management"], ans: 2, exp: "'transport input ssh' restricts VTY lines to SSH only. Telnet connections are rejected. This is essential for securing remote access. 'transport input telnet ssh' allows both. 'transport input none' blocks all remote access." },
+      { cat: "Device Management & Access", hot: 1, q: "What is the key difference between TACACS+ and RADIUS for AAA?", opts: ["TACACS+ uses UDP; RADIUS uses TCP", "TACACS+ encrypts only the password; RADIUS encrypts the full packet", "TACACS+ uses TCP 49 and encrypts the full packet; RADIUS uses UDP 1812 and encrypts only the password", "TACACS+ is open standard; RADIUS is Cisco proprietary"], ans: 2, exp: "TACACS+: TCP port 49, fully encrypts the entire packet, Cisco proprietary, separates Authentication/Authorization/Accounting. RADIUS: UDP 1812 (auth) and 1813 (acct), encrypts only the password, open RFC standard, combines auth+authorization." },
+      { cat: "Device Management & Access", q: "Which type of management access uses the physical console port and does not require network connectivity?", opts: ["Telnet", "SSH", "HTTP", "Out-of-band console access"], ans: 3, exp: "Console access is out-of-band management — uses a rollover cable connected to the device's physical console port. No IP connectivity required. Essential when the device is misconfigured, unreachable remotely, or being set up for the first time." },
+      { cat: "Device Management & Access", q: "Which command on VTY lines allows both SSH and Telnet connections?", opts: ["transport input all", "transport input ssh telnet", "transport input ssh", "transport output ssh telnet"], ans: 1, exp: "'transport input ssh telnet' (or 'transport input all') allows both protocols. For security, prefer 'transport input ssh' only. 'transport output' controls outgoing connections FROM the device, not incoming." },
+      { cat: "Device Management & Access", q: "What does the 'login block-for 120 attempts 3 within 60' command do?", opts: ["Locks out a specific user after 3 failures", "Blocks ALL logins for 120 seconds if 3 failures occur within 60 seconds", "Limits SSH sessions to 3 concurrent connections", "Sets the login timeout to 120 seconds"], ans: 1, exp: "This command implements DoS protection against brute-force login attacks. If 3 failed login attempts occur within 60 seconds, ALL login attempts are blocked for 120 seconds. Applies to console, VTY, and AUX lines." },
+      { cat: "Device Management & Access", q: "A cloud-managed network device sends all its configuration from the cloud. Which management model is this?", opts: ["Autonomous management", "On-premises centralized management", "Cloud-managed (Cisco Meraki style)", "CLI-based management"], ans: 2, exp: "Cloud-managed devices (e.g., Cisco Meraki) receive their configuration from the cloud dashboard. No local CLI config needed. Zero-touch provisioning — the device phones home to the cloud on first boot and gets its config automatically." },
+      // ─── Scenario Questions ───────────────────────────────────────────────────
+      { cat: "Scenario: Troubleshooting", hot: 1, q: "A PC in VLAN 10 cannot reach a PC in VLAN 20. Both are on the same switch. Inter-VLAN routing is configured via SVI. What should you check FIRST?", opts: ["Check if 'ip routing' is enabled on the switch", "Check the STP root bridge", "Check CDP neighbors", "Check if the trunk is carrying VLAN 10 and 20"], ans: 0, exp: "The most common inter-VLAN routing failure on a Layer 3 switch is forgetting 'ip routing'. Without it, SVIs exist but the switch won't route between them. Check: 'show ip route' — if it shows no connected routes for the VLANs, 'ip routing' is missing." },
+      { cat: "Scenario: Troubleshooting", hot: 1, q: "A switch port has been err-disabled. 'show interfaces Fa0/5' shows 'err-disabled'. What is the CORRECT recovery procedure?", opts: ["Reload the switch", "Remove and reinsert the cable", "Enter 'shutdown' then 'no shutdown' on the interface", "Enter 'no err-disable' on the interface"], ans: 2, exp: "To recover an err-disabled port: enter interface config mode, type 'shutdown', then 'no shutdown'. This resets the port. Also fix the ROOT CAUSE first (e.g., remove the rogue switch that triggered BPDU Guard) or the port will err-disable again immediately." },
+      { cat: "Scenario: Troubleshooting", hot: 1, q: "'Show interfaces trunk' shows VLAN 10 in the 'VLANs allowed on trunk' but NOT in 'VLANs in spanning tree forwarding state'. What is the likely cause?", opts: ["The trunk is misconfigured", "VLAN 10 does not exist in the VLAN database — it was not created with 'vlan 10'", "STP blocked VLAN 10", "The native VLAN is wrong"], ans: 1, exp: "A VLAN can be 'allowed' on a trunk but still not forward if the VLAN doesn't exist in the VLAN database. Fix: 'vlan 10' in global config on both switches. 'show vlan brief' will confirm if the VLAN exists." },
+      { cat: "Scenario: Troubleshooting", q: "A host connected to a PortFast port takes 30 seconds to reach the network after plugging in. PortFast is configured but not working. What is the MOST likely cause?", opts: ["BPDU Guard is blocking the port", "The port is configured as a trunk instead of an access port", "The switch needs to be rebooted", "The host's NIC is faulty"], ans: 1, exp: "PortFast only works on ACCESS ports. If the port is configured as a trunk, PortFast doesn't apply. Verify with 'show interfaces Fa0/X switchport' — if mode shows 'trunk', change to access mode." },
+      { cat: "Scenario: Troubleshooting", hot: 1, q: "After configuring EtherChannel, traffic doesn't pass. 'show etherchannel summary' shows '(SD)'. What is the MOST likely cause?", opts: ["The port-channel interface is missing an IP address", "There is a configuration mismatch between member ports (speed, duplex, VLAN)", "STP blocked the EtherChannel", "CDP neighbors are not detected"], ans: 1, exp: "'(SD)' = port-channel is Layer 2 but DOWN. Primary cause: mismatch on member interfaces. Check: speed, duplex, switchport mode (access/trunk), allowed VLANs, native VLAN — all must be IDENTICAL on all member interfaces on both switches." },
+      { cat: "Scenario: Troubleshooting", q: "A network admin sees CDP native VLAN mismatch warnings in syslog between SW1 Gi0/1 and SW2 Gi0/1. What should be checked?", opts: ["Spanning tree configuration", "The native VLAN on both sides of the trunk — they must match", "CDP version compatibility", "IP address configuration"], ans: 1, exp: "CDP native VLAN mismatch warning = the native VLAN configured on SW1's trunk port does NOT match SW2's trunk port. Fix: ensure both ends have the same 'switchport trunk native vlan X' configuration. Mismatch causes traffic to be placed on the wrong VLAN." },
+      { cat: "Scenario: Troubleshooting", q: "Which command would you use to verify if a switch port is in access or trunk mode and which VLAN it belongs to?", opts: ["show vlan brief", "show interfaces GigabitEthernet0/1 switchport", "show mac address-table", "show cdp neighbors"], ans: 1, exp: "'show interfaces [interface] switchport' provides the complete switchport information: administrative mode (access/trunk), operational mode, access VLAN, trunk VLANs, native VLAN, DTP status. The most comprehensive single switchport verification command." },
+      // ─── Advanced STP Scenarios ───────────────────────────────────────────────
+      { cat: "Spanning Tree Protocol", hot: 1, q: "Three switches are connected. SW1 has priority 4096, SW2 has priority 32768, SW3 has priority 32768. SW3 has the lowest MAC. Which switch is the root bridge?", opts: ["SW1 — lowest priority", "SW2 — higher priority than SW3", "SW3 — lowest MAC among equal priorities", "Cannot determine without full Bridge ID"], ans: 0, exp: "Root bridge = lowest Bridge ID. SW1's priority 4096 is LOWER than both SW2 and SW3 (32768). SW1 wins immediately — MAC address is only a tiebreaker when priorities are equal. SW1 becomes root bridge." },
+      { cat: "Spanning Tree Protocol", q: "What is the purpose of the STP Learning state?", opts: ["Sends BPDUs and forwards data frames", "Learns MAC addresses but does NOT forward data frames", "Forwards data frames but doesn't learn MACs", "Discards all frames"], ans: 1, exp: "STP Learning state: the port populates its MAC address table (learns source MACs) but does NOT forward data frames yet. This prevents the switch from forwarding traffic before it knows the network topology. Duration: 15 seconds in classic STP." },
+      { cat: "Spanning Tree Protocol", q: "Which command enables PortFast on ALL access ports of a switch globally?", opts: ["spanning-tree portfast all", "spanning-tree portfast default", "spanning-tree portfast global", "portfast enable all"], ans: 1, exp: "'spanning-tree portfast default' (global config) enables PortFast on all ports currently configured as access ports. Trunk ports are excluded automatically. Individual interfaces can still override this with 'no spanning-tree portfast'." },
+      // ─── WLC GUI ──────────────────────────────────────────────────────────────
+      { cat: "Wireless Architecture", q: "In the WLC WLAN GUI, what does enabling 'P2P Blocking' accomplish?", opts: ["Blocks all client traffic", "Prevents wireless clients in the same WLAN from communicating directly with each other", "Blocks the AP from communicating with the WLC", "Prevents users from accessing the internet"], ans: 1, exp: "P2P (Peer-to-Peer) Blocking prevents wireless clients associated to the same WLAN from communicating directly with each other. Used in guest networks for client isolation — guests can reach the internet but not each other's devices." },
+      { cat: "Wireless Architecture", q: "What is the purpose of the 'Allow AAA Override' option in WLC WLAN configuration?", opts: ["Disables RADIUS authentication", "Allows RADIUS to override WLC WLAN settings (VLAN, QoS, ACL) per user", "Enables local authentication as backup", "Allows management access via AAA"], ans: 1, exp: "'Allow AAA Override' lets the RADIUS server send attributes that override the WLAN's default settings — like assigning a specific VLAN, QoS policy, or ACL based on the authenticated user's identity. Used for user-based network access policies." },
+      // ─── Final Mixed ──────────────────────────────────────────────────────────
+      { cat: "VLANs", q: "A switch receives a frame with destination MAC FF:FF:FF:FF:FF:FF on VLAN 10. What does the switch do?", opts: ["Drops the frame — broadcast not supported on VLANs", "Floods the frame to all ports in VLAN 10 only", "Floods the frame to all ports on all VLANs", "Sends it to the default gateway"], ans: 1, exp: "Broadcast frames are flooded within the VLAN — to all ports in VLAN 10 ONLY. VLANs contain broadcast domains. The frame does NOT cross to VLAN 20 or other VLANs. This is one of the primary benefits of VLANs — broadcast isolation." },
+      { cat: "Trunking & 802.1Q", q: "Which field in the 802.1Q tag carries the VLAN identifier?", opts: ["TPID (2 bytes)", "PCP (3 bits)", "VID — VLAN Identifier (12 bits)", "DEI (1 bit)"], ans: 2, exp: "The 802.1Q tag structure: TPID (0x8100, 2 bytes) + PCP/DEI/VID (2 bytes). VID = VLAN Identifier = 12 bits = supports 4096 VLANs (0-4095). PCP = priority (QoS). DEI = drop eligible indicator." },
+      { cat: "EtherChannel", q: "An EtherChannel has 4 member links of 1 Gbps each. What is the maximum theoretical bandwidth?", opts: ["1 Gbps", "2 Gbps", "4 Gbps", "400 Mbps"], ans: 2, exp: "EtherChannel aggregates bandwidth: 4 × 1 Gbps = 4 Gbps theoretical maximum. However, a single flow (same src/dst) always uses the same physical link — so one session is limited to 1 Gbps. The 4 Gbps is achieved across multiple simultaneous flows." },
+      { cat: "Device Management & Access", q: "Which command verifies that SSH version 2 is running on a Cisco device?", opts: ["show ssh", "show ip ssh", "show crypto key", "show version"], ans: 1, exp: "'show ip ssh' displays SSH configuration: SSH enabled/disabled, version (1.5 or 2), authentication timeout, and retry count. You should see 'SSH Enabled - version 2.0'. If SSH is disabled, check hostname, domain, and RSA key generation." },
+      { cat: "Spanning Tree Protocol", q: "What does 'show spanning-tree vlan 10' display?", opts: ["Only the root bridge information", "Detailed STP information for VLAN 10 — root bridge, local bridge, all ports with role and state", "MAC address table for VLAN 10", "VLAN 10 IP addressing"], ans: 1, exp: "'show spanning-tree vlan 10' shows: root bridge ID, this switch's bridge ID, root path cost, and for each interface — role (root/designated/alternate), state (forwarding/discarding), cost, and port priority. Complete STP topology for VLAN 10." },
+      { cat: "Wireless Security", q: "A company wants individual users to authenticate with their own credentials for Wi-Fi. No shared password. Which solution is BEST?", opts: ["WPA2-Personal with a strong PSK", "WPA2-Enterprise with 802.1X and RADIUS", "WEP with individual keys", "MAC address filtering"], ans: 1, exp: "WPA2-Enterprise (802.1X) with RADIUS: each user authenticates with their own username/password (or certificate). Administrators can revoke individual access without changing the password for everyone. WPA2-Personal shares ONE password with all users." },
+    ];
+
+    let userAnswers = {}, submitted = {}, currentFilter = 'all';
+
+    // Add above renderList()-------------------------------------------
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    // ------------------------------------------------------------------
+
+    function renderList() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const container = document.getElementById('qlist');
+      let html = '', prev = '';
+      qs.forEach((q, i) => {
+        if (currentFilter === 'correct' && !(submitted[i] && userAnswers[i] === q.ans)) return;
+        if (currentFilter === 'wrong' && !(submitted[i] && userAnswers[i] !== q.ans)) return;
+        if (currentFilter === 'unattempted' && submitted[i]) return;
+        if (search && !q.q.toLowerCase().includes(search) && !q.cat.toLowerCase().includes(search) && !q.exp.toLowerCase().includes(search)) return;
+        if (q.cat !== prev) { html += `<div class="cat-header">📌 ${q.cat}</div>`; prev = q.cat; }
+        const isS = submitted[i], isC = isS && userAnswers[i] === q.ans, isW = isS && userAnswers[i] !== q.ans;
+        let cc = 'q-card'; if (isC) cc += ' answered-correct'; if (isW) cc += ' answered-wrong';
+        let badge = '';
+        if (isC) badge = '<span class="result-badge rb-correct">✓ Correct</span>';
+        else if (isW) badge = '<span class="result-badge rb-wrong">✗ Wrong</span>';
+        else if (userAnswers[i] !== undefined) badge = '<span class="result-badge" style="background:#e0f2fe;color:#0369a1">Selected</span>';
+        html += `<div class="${cc}" id="qcard-${i}">
+      <div class="q-header">
+        <span class="q-num">Q${i + 1}${q.hot ? '<span class="tag-hot">🔥</span>' : ''}</span>
+        <span style="flex:1"></span>${badge}
+        <span class="q-category">${q.cat}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">`;
+        ['A', 'B', 'C', 'D'].forEach((L, oi) => {
+          let cls = 'opt';
+          if (userAnswers[i] === oi && !isS) cls += ' selected';
+          if (isS && oi === q.ans) cls += ' correct-ans';
+          if (isS && userAnswers[i] === oi && oi !== q.ans) cls += ' wrong-ans';
+          const dis = isS ? 'style="cursor:default"' : `onclick="sel(${i},${oi})"`;
+          html += `<div class="${cls}" ${dis}><span class="opt-letter">${L}</span>${q.opts[oi]}</div>`;
+        });
+        html += `</div><div class="btn-row">
+      ${!isS ? `<button class="btn btn-submit" onclick="subQ(${i})">Submit</button>` : ''}
+      <button class="btn btn-show" onclick="togExp(${i})">Explanation</button>
+      ${isS ? `<button class="btn btn-reset-q" onclick="rstQ(${i})">Reset</button>` : ''}
+    </div>
+    <div class="explanation" id="exp-${i}"><strong>✅ Answer & Explanation: </strong>${q.exp}</div>
+    </div>`;
+      });
+      if (!html) html = '<div style="padding:20px;text-align:center;color:#888">No matching questions.</div>';
+      container.innerHTML = html; updateStats();
+    }
+
+// -------------------------------------------------------------------
+shuffleArray(qs);
+
+qs.forEach(q => {
+  const correctAnswer = q.opts[q.ans];
+
+  for (let i = q.opts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [q.opts[i], q.opts[j]] = [q.opts[j], q.opts[i]];
+  }
+
+  q.ans = q.opts.indexOf(correctAnswer);
+});
+
+renderList();
+// -------------------------------------------------------------------
+
+    function sel(qi, oi) { if (submitted[qi]) return; userAnswers[qi] = oi; renderList(); }
+    function subQ(qi) { if (userAnswers[qi] === undefined) { alert('Select an answer first!'); return; } submitted[qi] = true; renderList(); }
+    function togExp(qi) { const e = document.getElementById('exp-' + qi); if (e) e.classList.toggle('show'); }
+    function rstQ(qi) { delete userAnswers[qi]; delete submitted[qi]; renderList(); }
+    function submitAll() { qs.forEach((_, i) => { if (userAnswers[i] !== undefined) submitted[i] = true; }); renderList(); }
+    function revealAll() { document.querySelectorAll('.explanation').forEach(e => e.classList.add('show')); }
+    function resetAll() { if (!confirm('Reset all?')) return; userAnswers = {}; submitted = {}; renderList(); }
+    function showScore() {
+      const tot = qs.length, att = Object.keys(submitted).length;
+      const cor = qs.filter((q, i) => submitted[i] && userAnswers[i] === q.ans).length;
+      const pct = att > 0 ? Math.round(cor / tot * 100) : 0;
+      const grade = pct >= 90 ? '🏆 Excellent — Exam Ready!' : pct >= 75 ? '👍 Good — Keep Practicing' : pct >= 60 ? '📚 Needs Review' : '🔄 Study More';
+      const ov = document.createElement('div'); ov.className = 'overlay'; ov.onclick = closeModal;
+      const md = document.createElement('div'); md.className = 'score-modal';
+      md.innerHTML = `<h2>Network Access Score</h2><div class="big">${pct}%</div>
+    <p style="margin:8px 0;font-size:14px">${cor} / ${tot} correct</p>
+    <p style="color:#dc2626">Wrong: ${att - cor}</p>
+    <p style="color:#6b7280;margin-bottom:12px">Unattempted: ${tot - att}</p>
+    <p style="font-size:16px;font-weight:700;color:#5B3FD4">${grade}</p>
+    <button class="gbtn gbtn-primary" style="margin-top:14px" onclick="closeModal()">Close</button>`;
+      document.body.appendChild(ov); document.body.appendChild(md);
+      window._md = md; window._ov = ov;
+    }
+    function closeModal() { if (window._md) window._md.remove(); if (window._ov) window._ov.remove(); }
+    function updateStats() {
+      const tot = qs.length, att = Object.keys(submitted).length;
+      const cor = qs.filter((q, i) => submitted[i] && userAnswers[i] === q.ans).length;
+      document.getElementById('s-total').textContent = tot;
+      document.getElementById('s-correct').textContent = cor;
+      document.getElementById('s-wrong').textContent = att - cor;
+      document.getElementById('s-unattempted').textContent = tot - att;
+      const pct = att > 0 ? Math.round(cor / tot * 100) : 0;
+      document.getElementById('s-pct').textContent = pct + '%';
+      document.getElementById('prog').style.width = Math.round(att / tot * 100) + '%';
+    }
+    function setFilter(f, btn) { currentFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderList(); }
+    function applyFilters() { renderList(); }
+    renderList();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: transparent;
+      color: var(--fg, #1a1a1a);
+      font-size: 13px;
+      padding: 10px
+    }
+
+    h1 {
+      font-size: 15px;
+      color: var(--accent, #5B3FD4);
+      margin-bottom: 4px;
+      border-bottom: 2px solid var(--accent, #5B3FD4);
+      padding-bottom: 6px
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+      flex-wrap: wrap
+    }
+
+    .stat {
+      background: var(--surface2, #f0eeff);
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-align: center;
+      flex: 1;
+      min-width: 70px
+    }
+
+    .stat .v {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .stat .l {
+      font-size: 10px;
+      color: #888
+    }
+
+    .stat.correct .v {
+      color: #16a34a
+    }
+
+    .stat.wrong .v {
+      color: #dc2626
+    }
+
+    .stat.skip .v {
+      color: #d97706
+    }
+
+    .progress-wrap {
+      background: #e5e7eb;
+      border-radius: 10px;
+      height: 10px;
+      margin-bottom: 10px
+    }
+
+    .progress-fill {
+      height: 10px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #5B3FD4, #0891b2);
+      transition: width 0.3s
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .filter-bar input {
+      flex: 1;
+      min-width: 160px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1.5px solid var(--accent, #5B3FD4);
+      font-size: 12px;
+      background: var(--surface, #f8f8f8);
+      color: var(--fg, #1a1a1a)
+    }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      border: 1.5px solid #aaa;
+      background: transparent;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555
+    }
+
+    .filter-btn.active {
+      background: var(--accent, #5B3FD4);
+      color: #fff;
+      border-color: var(--accent, #5B3FD4)
+    }
+
+    .q-card {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s
+    }
+
+    .q-card.answered-correct {
+      border-color: #16a34a
+    }
+
+    .q-card.answered-wrong {
+      border-color: #dc2626
+    }
+
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 14px 6px;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .q-num {
+      font-weight: 800;
+      color: var(--accent, #5B3FD4);
+      font-size: 12px;
+      flex-shrink: 0
+    }
+
+    .q-category {
+      font-size: 10px;
+      background: var(--accent, #5B3FD4);
+      color: #fff;
+      border-radius: 10px;
+      padding: 2px 8px;
+      flex-shrink: 0
+    }
+
+    .q-text {
+      padding: 0 14px 10px;
+      font-weight: 600;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .options {
+      padding: 0 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      border: 1.5px solid #e5e7eb;
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1.4
+    }
+
+    .opt:hover {
+      border-color: var(--accent, #5B3FD4);
+      background: var(--surface2, #f0eeff)
+    }
+
+    .opt.selected {
+      border-color: var(--accent, #5B3FD4);
+      background: var(--surface2, #f0eeff)
+    }
+
+    .opt.correct-ans {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      font-weight: 700
+    }
+
+    .opt.wrong-ans {
+      border-color: #dc2626;
+      background: #fef2f2
+    }
+
+    .opt-letter {
+      font-weight: 800;
+      color: var(--accent, #5B3FD4);
+      flex-shrink: 0;
+      width: 16px
+    }
+
+    .opt.correct-ans .opt-letter {
+      color: #16a34a
+    }
+
+    .opt.wrong-ans .opt-letter {
+      color: #dc2626
+    }
+
+    .explanation {
+      margin: 0 14px 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      background: var(--surface2, #f0faf8);
+      border-left: 4px solid #1D9E75;
+      font-size: 12px;
+      line-height: 1.6;
+      display: none
+    }
+
+    .explanation.show {
+      display: block
+    }
+
+    .explanation strong {
+      color: #1D9E75
+    }
+
+    .code {
+      background: #1e1e2e;
+      color: #a6e3a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      display: inline-block
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 12px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .btn-submit {
+      background: var(--accent, #5B3FD4);
+      color: #fff
+    }
+
+    .btn-show {
+      background: #1D9E75;
+      color: #fff
+    }
+
+    .btn-reset-q {
+      background: #e5e7eb;
+      color: #555
+    }
+
+    .result-badge {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .rb-correct {
+      background: #dcfce7;
+      color: #16a34a
+    }
+
+    .rb-wrong {
+      background: #fee2e2;
+      color: #dc2626
+    }
+
+    .global-btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap
+    }
+
+    .gbtn {
+      padding: 6px 16px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .gbtn-primary {
+      background: var(--accent, #5B3FD4);
+      color: #fff
+    }
+
+    .gbtn-green {
+      background: #16a34a;
+      color: #fff
+    }
+
+    .gbtn-red {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .gbtn-gray {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .tag-hot {
+      background: #e05a2b;
+      color: #fff;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      margin-left: 4px
+    }
+
+    .cat-header {
+      background: var(--surface2, #f0eeff);
+      padding: 6px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--accent, #5B3FD4);
+      border-bottom: 1px solid #e5e7eb;
+      letter-spacing: 0.5px
+    }
+
+    .score-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      text-align: center;
+      min-width: 280px;
+      max-width: 90vw
+    }
+
+    .score-modal h2 {
+      font-size: 22px;
+      margin-bottom: 8px;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .score-modal .big {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--accent, #5B3FD4)
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99
+    }
+
+    .complete-banner {
+      background: linear-gradient(135deg, #5B3FD4, #1D9E75);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="complete-banner">🏆 Domain 6: 🎯 CCNA Automation & Programmability — 100 Exam MCQ</div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="v" id="s-total">100</div>
+      <div class="l">Total</div>
+    </div>
+    <div class="stat correct">
+      <div class="v" id="s-correct">0</div>
+      <div class="l">Correct</div>
+    </div>
+    <div class="stat wrong">
+      <div class="v" id="s-wrong">0</div>
+      <div class="l">Wrong</div>
+    </div>
+    <div class="stat skip">
+      <div class="v" id="s-unattempted">100</div>
+      <div class="l">Remaining</div>
+    </div>
+    <div class="stat">
+      <div class="v" id="s-pct">0%</div>
+      <div class="l">Score</div>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="prog" style="width:0%"></div>
+  </div>
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="🔍 Search by topic, keyword, or technology..." oninput="af()">
+    <button class="filter-btn active" onclick="sf('all',this)">All</button>
+    <button class="filter-btn" onclick="sf('unattempted',this)">Remaining</button>
+    <button class="filter-btn" onclick="sf('correct',this)">✓ Correct</button>
+    <button class="filter-btn" onclick="sf('wrong',this)">✗ Wrong</button>
+  </div>
+  <div class="global-btns">
+    <button class="gbtn gbtn-primary" onclick="saAll()">Submit All</button>
+    <button class="gbtn gbtn-green" onclick="raAll()">Show All Explanations</button>
+    <button class="gbtn gbtn-gray" onclick="resetAll()">Reset Quiz</button>
+    <button class="gbtn gbtn-red" onclick="showScore()">📊 Final Score</button>
+  </div>
+  <div id="qlist"></div>
+  <script>
+    const qs = [
+      // ── AUTOMATION IMPACT ──────────────────────────────────────────────────────
+      { cat: "Automation Impact", hot: 1, q: "What is the PRIMARY benefit of network automation compared to manual CLI-based management?", opts: ["Reduces hardware costs", "Eliminates human errors, ensures consistent configuration, and speeds up deployment across hundreds of devices simultaneously", "Makes the network more secure by default", "Replaces the need for network engineers"], ans: 1, exp: "Network automation eliminates the #1 source of network outages: human error. Manual CLI = one typo per device × 500 devices = many potential mistakes. Automation: one tested script/template deploys identical config to all devices simultaneously. Benefits: speed, consistency, accuracy, audit trail, and scalability." },
+      { cat: "Automation Impact", q: "Which statement BEST describes 'configuration drift' in traditional network management?", opts: ["Routers automatically update their configurations", "Over time, manually managed devices develop inconsistent configurations due to ad-hoc changes", "Network configurations become more secure over time", "Routing protocols automatically adjust configurations"], ans: 1, exp: "Configuration drift: in manually managed networks, engineers make one-off CLI changes for troubleshooting, quick fixes, or urgent requests — without updating documentation or templates. Over time, each device becomes slightly different from the intended baseline. Automation prevents drift by enforcing desired state consistently." },
+      { cat: "Automation Impact", hot: 1, q: "How does network automation change the role of network engineers?", opts: ["Eliminates the need for network engineers entirely", "Shifts focus from repetitive manual tasks (CLI changes) to higher-value work: designing automation, writing scripts, policy definition, and troubleshooting", "Makes the job easier but less important", "Requires engineers to become full software developers"], ans: 1, exp: "Automation doesn't replace network engineers — it elevates them. Instead of SSHing into 500 devices to change a VLAN, engineers write automation scripts. Skills needed: Python/YAML basics, API understanding, automation tools (Ansible/Terraform), and network design. The job becomes more strategic and less repetitive." },
+      { cat: "Automation Impact", q: "Which of the following is NOT a benefit of network automation?", opts: ["Faster deployment of changes", "Consistent configuration across devices", "Elimination of all network hardware", "Improved compliance and audit trails"], ans: 2, exp: "Automation doesn't eliminate hardware — routers, switches, and cables are still needed. Automation improves: speed (faster deployment), consistency (same config everywhere), compliance (enforced policies), and provides audit trails (every change logged). Hardware is still required; automation just manages it better." },
+      { cat: "Automation Impact", q: "What is 'Infrastructure as Code' (IaC)?", opts: ["Writing IOS commands in a text file", "Managing and provisioning network/infrastructure through machine-readable definition files rather than manual processes — enables version control and automation", "A new type of network hardware", "Cisco's proprietary automation platform"], ans: 1, exp: "IaC: treating infrastructure configuration like software code — stored in version control (Git), tested, reviewed, and deployed automatically. Example: Terraform HCL files define desired network state. Benefits: reproducible environments, change tracking, peer review of configs, rollback capability, and automated testing." },
+      // ── TRADITIONAL vs CONTROLLER ──────────────────────────────────────────────
+      { cat: "Traditional vs Controller", hot: 1, q: "What is the fundamental difference between traditional and controller-based networking?", opts: ["Traditional uses fiber; controller-based uses copper", "Traditional has distributed control plane (each device manages itself); controller-based centralizes the control plane in a controller, devices only handle forwarding", "Traditional is faster; controller-based is slower", "Traditional uses IPv4; controller-based uses IPv6 only"], ans: 1, exp: "Traditional: each device has its own control plane (OSPF, STP, ARP tables) — distributed intelligence. Controller-based (SDN): control plane MOVED to a central controller. Devices become 'dumb' forwarders (data plane only). Controller has network-wide visibility and programs all devices. Think: traditional = each person navigates independently; SDN = one GPS guides everyone." },
+      { cat: "Traditional vs Controller", hot: 1, q: "In SDN architecture, what are the THREE planes of network operation?", opts: ["Physical, Logical, Virtual", "Data plane, Control plane, Management plane", "Hardware plane, Software plane, Cloud plane", "Forwarding plane, Routing plane, Configuration plane"], ans: 1, exp: "Three planes: Data plane = forwards packets (hardware/ASIC, fast). Control plane = builds tables (routing, ARP, STP) — the 'brain' that tells the data plane what to do. Management plane = device management (SSH, SNMP, Syslog, NTP) — out-of-band admin access. SDN separates control from data plane." },
+      { cat: "Traditional vs Controller", hot: 1, q: "Which plane is responsible for building routing tables and making forwarding decisions?", opts: ["Data plane", "Control plane", "Management plane", "Application plane"], ans: 1, exp: "Control plane = the brain of the network device. Runs routing protocols (OSPF, EIGRP), builds routing/MAC/ARP tables, runs STP. The results of control plane processing are installed into the data plane's forwarding tables (FIB, TCAM). SDN moves this intelligence to a central controller." },
+      { cat: "Traditional vs Controller", q: "What does the data plane do?", opts: ["Runs OSPF and builds routing tables", "Forwards packets/frames based on pre-built forwarding tables — typically done in hardware (ASIC) at wire speed", "Manages SSH and SNMP access", "Decides which route is best based on metrics"], ans: 0, exp: "Data plane (forwarding plane) = hardware-based packet/frame forwarding. Uses pre-built tables (FIB, TCAM, MAC table) populated by the control plane. Performs: IP forwarding, frame switching, NAT, ACL filtering, QoS marking — all at line rate in silicon. SDN leaves data plane on devices; moves control plane to controller." },
+      { cat: "Traditional vs Controller", q: "What is the management plane responsible for?", opts: ["Forwarding user data packets", "Building routing and switching tables", "Out-of-band device administration: SSH, Telnet, SNMP, Syslog, NTP, NetFlow", "Running STP and OSPF"], ans: 2, exp: "Management plane = how network engineers access and manage devices. Protocols: SSH (CLI access), SNMP (monitoring), Syslog (logging), NTP (time sync), NetFlow (traffic analysis), NETCONF/RESTCONF (programmatic config). Separate from both data and control planes — even if control plane fails, management access should work." },
+      { cat: "Traditional vs Controller", hot: 1, q: "What is a key advantage of controller-based networking over traditional networking?", opts: ["Lower equipment costs", "Centralized visibility, consistent policy enforcement, and faster network-wide configuration changes from a single point", "Better routing protocols", "No need for physical network infrastructure"], ans: 1, exp: "SDN/controller benefits: (1) Network-wide visibility from one dashboard — see all devices, links, flows. (2) Policy changes pushed to all devices simultaneously. (3) Consistent enforcement — no configuration drift. (4) Programmable via APIs — integrate with business systems. (5) Faster troubleshooting with AI-driven analytics (DNA Center Assurance)." },
+      // ── SDN ARCHITECTURE ────────────────────────────────────────────────────────
+      { cat: "SDN Architecture", hot: 1, q: "What is the Northbound API (NBI) in SDN?", opts: ["API between the controller and network devices (southbound)", "API between the SDN controller and applications/management systems — allows apps to program the network", "The physical interface on the controller", "The API for out-of-band management"], ans: 1, exp: "Northbound API (NBI): between the SDN CONTROLLER and APPLICATIONS above it. Applications (monitoring tools, orchestration systems, automation scripts) use the NBI to program network behavior. Cisco DNA Center exposes a REST API as its NBI. Think: northbound = facing 'up' toward business applications." },
+      { cat: "SDN Architecture", hot: 1, q: "What is the Southbound API (SBI) in SDN?", opts: ["API between controller and applications", "API between the SDN CONTROLLER and NETWORK DEVICES below it — controller programs device forwarding behavior", "The physical southbound-facing port", "REST API for device management"], ans: 1, exp: "Southbound API (SBI): between the SDN CONTROLLER and NETWORK DEVICES (routers, switches, APs). Controller uses SBI to program flow tables, download configs, and collect telemetry from devices. SBI protocols: OpenFlow, NETCONF, RESTCONF, OpFlex, gRPC. Think: southbound = facing 'down' toward network hardware." },
+      { cat: "SDN Architecture", hot: 1, q: "What is the difference between the network overlay and underlay in SDN/SD-Access?", opts: ["Overlay = physical; underlay = virtual", "Underlay = physical IP network providing basic connectivity; overlay = virtual network built on top using tunnels (VXLAN) for logical topology", "They are the same thing", "Overlay = Layer 2; underlay = Layer 3 only"], ans: 1, exp: "Underlay = the physical infrastructure — routers, switches, cables providing basic IP reachability between all network devices. Overlay = virtual network built ON TOP of the underlay using tunneling protocols (VXLAN in Cisco SD-Access). The overlay provides logical segmentation, policy enforcement, and user mobility independent of physical topology." },
+      { cat: "SDN Architecture", q: "Which protocol is used as the OVERLAY in Cisco SD-Access?", opts: ["GRE", "IPsec", "VXLAN (Virtual Extensible LAN)", "802.1Q"], ans: 2, exp: "Cisco SD-Access uses VXLAN (RFC 7348) for the overlay. VXLAN encapsulates original Layer 2 frames in UDP packets (port 4789), tunneling them across the IP underlay. Supports up to 16 million virtual network segments (24-bit VNI). LISP handles the control plane (endpoint location mapping)." },
+      { cat: "SDN Architecture", q: "What is the 'fabric' in the context of Cisco SD-Access?", opts: ["The physical cables only", "The combination of overlay + underlay managed as a single system by DNA Center", "A type of switch", "The wireless portion only"], ans: 1, exp: "Fabric = underlay + overlay managed holistically by the controller (DNA Center). The fabric provides: automated provisioning, policy enforcement, segmentation, and mobility. Fabric edge nodes = access switches. Fabric border nodes = connect to external networks. Fabric control plane nodes = run LISP for mapping." },
+      { cat: "SDN Architecture", hot: 1, q: "Which southbound protocol does Cisco DNA Center primarily use to configure network devices?", opts: ["OpenFlow", "Telnet", "NETCONF/RESTCONF", "SNMP v1"], ans: 2, exp: "Cisco DNA Center uses NETCONF (RFC 6241) and RESTCONF (RFC 8040) as southbound APIs to configure devices. NETCONF uses SSH/XML for structured configuration management. RESTCONF uses HTTPS/JSON or XML — a REST-style interface to NETCONF functionality. Both provide model-driven programmability." },
+      { cat: "SDN Architecture", q: "What is OpenFlow in the context of SDN?", opts: ["A Cisco proprietary protocol", "An IEEE standard for wireless", "An open southbound protocol that allows an SDN controller to program flow tables directly on OpenFlow-capable switches", "A configuration management tool"], ans: 2, exp: "OpenFlow (ONF standard) = one of the first southbound SDN protocols. Allows the SDN controller to directly install, modify, and delete flow table entries on OpenFlow-enabled switches. The switch becomes a 'dumb' forwarder — controller makes all decisions. Less common in enterprise today (replaced by NETCONF/RESTCONF) but foundational SDN concept." },
+      // ── CISCO DNA CENTER ────────────────────────────────────────────────────────
+      { cat: "Cisco DNA Center", hot: 1, q: "What are the four main functional pillars of Cisco DNA Center?", opts: ["Monitor, Configure, Secure, Optimize", "Design, Policy, Provision, Assurance", "Install, Configure, Test, Deploy", "Plan, Build, Operate, Optimize"], ans: 1, exp: "Cisco DNA Center four pillars: (1) Design — define sites, hierarchy, IP addressing, templates. (2) Policy — define group-based access policies, QoS, segmentation. (3) Provision — auto-deploy configs to devices using templates (zero-touch). (4) Assurance — AI-driven monitoring, health scores, root cause analysis, anomaly detection." },
+      { cat: "Cisco DNA Center", hot: 1, q: "What is Cisco DNA Center Assurance?", opts: ["A configuration backup tool", "AI/ML-driven network monitoring that provides health scores, anomaly detection, and root cause analysis", "A firewall management platform", "A wireless survey tool"], ans: 1, exp: "DNA Center Assurance uses AI/ML to: (1) Calculate network/client/app health scores (0-10). (2) Detect anomalies by comparing current behavior to learned baselines. (3) Perform root cause analysis — correlate events to identify outage causes. (4) Provide predictive insights — warn before problems impact users. (5) Compare against Cisco's global telemetry database." },
+      { cat: "Cisco DNA Center", q: "How does Cisco DNA Center communicate with network devices for configuration?", opts: ["Telnet only", "SSH CLI scripting only", "REST API (northbound for apps) and NETCONF/RESTCONF/SSH (southbound to devices)", "SNMP v1 only"], ans: 2, exp: "DNA Center uses: Northbound = REST API (JSON over HTTPS) for external applications and scripts to interact with DNA Center. Southbound = NETCONF, RESTCONF, SSH, and SNMP to configure and monitor network devices. This multi-protocol southbound approach supports both legacy and modern devices." },
+      { cat: "Cisco DNA Center", q: "What is the primary advantage of DNA Center's 'Provision' capability?", opts: ["Manual device configuration", "Zero-touch provisioning — new devices automatically receive correct configuration when connected to the network", "Wireless survey planning", "Network diagramming"], ans: 1, exp: "DNA Center Provision enables PnP (Plug and Play): a new switch/router ships to a branch, gets plugged in, contacts DNA Center (via DHCP option 43 or DNS), downloads its configuration automatically — zero manual CLI. The entire branch can be deployed by non-technical staff. Massive operational efficiency for distributed enterprises." },
+      // ── AI AND ML ───────────────────────────────────────────────────────────────
+      { cat: "AI and ML in Networking", hot: 1, q: "What is the difference between predictive AI and generative AI in networking?", opts: ["Predictive AI creates new configs; generative AI forecasts failures", "Predictive AI analyzes historical data to forecast future events (failures, capacity); generative AI creates new content (configs, summaries, troubleshooting steps)", "They are the same technology", "Predictive AI is hardware-based; generative AI is software-based"], ans: 1, exp: "Predictive AI: learns from historical network telemetry to PREDICT future states — 'this link will fail in 4 hours based on error trends,' 'bandwidth will be exhausted by Friday.' Used in DNA Center Assurance. Generative AI: creates NEW content — generates IOS configs from plain English descriptions, writes RCA reports, answers natural language network queries." },
+      { cat: "AI and ML in Networking", hot: 1, q: "Which machine learning type learns from labeled training data with known correct answers?", opts: ["Unsupervised learning", "Reinforcement learning", "Supervised learning", "Transfer learning"], ans: 2, exp: "Supervised learning: trained on labeled datasets where correct answers are known. Example: trained on thousands of 'normal' vs 'attack' network traffic samples — learns to classify new traffic. Used for: intrusion detection, traffic classification, anomaly detection with defined baselines." },
+      { cat: "AI and ML in Networking", q: "Which ML type finds patterns in data WITHOUT labeled examples?", opts: ["Supervised learning", "Reinforcement learning", "Unsupervised learning", "Deep learning only"], ans: 2, exp: "Unsupervised learning: no labeled training data. The algorithm finds patterns, clusters, and anomalies on its own. Network use: clustering similar devices for policy groups, detecting unusual traffic patterns without knowing what 'normal' looks like in advance. DNA Center uses this to establish behavioral baselines automatically." },
+      { cat: "AI and ML in Networking", q: "How does Cisco use AI/ML in DNA Center for network operations?", opts: ["Only for billing and licensing", "For anomaly detection, health scoring, root cause analysis, predictive analytics, and comparing network behavior against global telemetry from thousands of networks", "Only for wireless channel optimization", "For basic ping and traceroute automation"], ans: 1, exp: "DNA Center AI/ML capabilities: (1) Network health scores (AI-calculated). (2) Anomaly detection (ML baselines for each network). (3) Root cause analysis (correlates events → identifies cause). (4) Predictive analytics (forecasts issues before they occur). (5) Cisco AI Network Analytics — compares your network against anonymized global telemetry from thousands of Cisco networks." },
+      { cat: "AI and ML in Networking", hot: 1, q: "What is a key use case for GENERATIVE AI in network management?", opts: ["Predicting hardware failures from historical data", "Generating IOS configurations from natural language descriptions and providing conversational troubleshooting assistance", "Classifying traffic types using supervised learning", "Clustering devices into policy groups automatically"], ans: 1, exp: "Generative AI (like Cisco AI Assistant): (1) 'Configure OSPF area 0 on all core routers' → AI generates complete IOS config. (2) 'Why is the network slow?' → AI reads all logs and writes plain-English explanation. (3) Natural language queries: 'Show me all switches with port security violations in the last 24 hours.' Reduces need for CLI expertise." },
+      // ── REST APIs ───────────────────────────────────────────────────────────────
+      { cat: "REST APIs", hot: 1, q: "Which HTTP verb is used to RETRIEVE data from a REST API without modifying anything?", opts: ["POST", "PUT", "GET", "DELETE"], ans: 2, exp: "REST HTTP verbs: GET = retrieve/read (no changes). POST = create new resource. PUT = replace entire resource. PATCH = partial update. DELETE = remove resource. CRUD mapping: Create=POST, Read=GET, Update=PUT/PATCH, Delete=DELETE. GET is idempotent — calling it multiple times gives same result without side effects." },
+      { cat: "REST APIs", hot: 1, q: "Which HTTP verb is used to CREATE a new resource in a REST API?", opts: ["GET", "POST", "DELETE", "PUT"], ans: 1, exp: "POST = CREATE. Used to submit data to create a new resource. Example: POST to /api/v1/network-device to add a new device to DNA Center inventory. The server creates the resource and typically responds with HTTP 201 (Created) and the new resource's details including its ID." },
+      { cat: "REST APIs", hot: 1, q: "What HTTP status code indicates a successful REST API request with content returned?", opts: ["200 OK", "201 Created", "204 No Content", "404 Not Found"], ans: 0, exp: "HTTP 200 OK = success with response body. Common success codes: 200 = OK (GET, PUT, PATCH succeeded with content), 201 = Created (POST succeeded, new resource created), 204 = No Content (DELETE succeeded, no body). 4xx = client error, 5xx = server error." },
+      { cat: "REST APIs", hot: 1, q: "What does HTTP status code 401 mean?", opts: ["Resource not found", "Server error", "Unauthorized — authentication required (missing or invalid credentials)", "Bad request — malformed syntax"], ans: 2, exp: "HTTP 401 Unauthorized = authentication required or failed. The request lacks valid credentials. Fix: provide correct username/password, token, or API key. Different from 403 Forbidden (authenticated but no permission). Common in REST APIs when the token is expired or wrong." },
+      { cat: "REST APIs", hot: 1, q: "What HTTP status code means the requested resource was NOT FOUND?", opts: ["400", "401", "403", "404"], ans: 3, exp: "HTTP 404 Not Found = the requested resource/URL doesn't exist. Common when: wrong URL path, resource deleted, typo in endpoint. In REST APIs: GET /api/v1/device/WRONG-ID returns 404 if that device ID doesn't exist. Remember: 4xx = CLIENT made an error (wrong URL, wrong auth, missing data)." },
+      { cat: "REST APIs", hot: 1, q: "What are the SIX constraints that define a REST architecture?", opts: ["Stateless, Cacheable, Client-Server, Uniform Interface, Layered System, Code on Demand", "TCP, HTTP, JSON, REST, CRUD, API", "GET, POST, PUT, PATCH, DELETE, OPTIONS", "Authentication, Authorization, Encryption, Compression, Caching, Versioning"], ans: 0, exp: "REST constraints: (1) Client-Server (separation of concerns). (2) Stateless (each request self-contained, no server session). (3) Cacheable (responses can be cached). (4) Uniform Interface (consistent URL structure and methods). (5) Layered System (client doesn't know about intermediaries). (6) Code on Demand (optional: server sends executable code). All REST APIs must follow these." },
+      { cat: "REST APIs", q: "What does 'stateless' mean in REST API design?", opts: ["The API doesn't use SSL", "Each request must contain ALL information needed — the server does NOT store session state between requests", "The server never sends error responses", "REST APIs can only be used once"], ans: 1, exp: "Stateless: the server doesn't remember previous requests. Every API call must include everything needed (credentials, parameters, context). Benefits: scalability (any server can handle any request), simplicity, reliability. Implementation: tokens (JWT) or API keys sent with EVERY request instead of session cookies." },
+      { cat: "REST APIs", q: "Which REST API authentication type sends credentials encoded in Base64 in every request header?", opts: ["Token-based auth", "OAuth 2.0", "Basic Authentication", "API Key"], ans: 2, exp: "Basic Authentication: username:password combined, Base64-encoded, sent in 'Authorization: Basic [encoded]' header with EVERY request. IMPORTANT: Base64 is NOT encryption — it's trivially reversible. ALWAYS use HTTPS with Basic Auth or credentials are exposed. Cisco DNA Center API supports Basic Auth for initial token retrieval." },
+      { cat: "REST APIs", q: "What is token-based authentication in REST APIs?", opts: ["Username and password sent with every request", "Login once with credentials, receive a temporary token; use token (not password) for subsequent requests — token expires", "Encrypt all requests with AES", "Use certificates for every request"], ans: 1, exp: "Token-based auth: (1) POST credentials to /auth/token endpoint. (2) Server returns a time-limited token (JWT or session token). (3) All subsequent requests include: 'X-Auth-Token: [token]' in header. (4) Token expires (e.g., 1 hour) requiring re-authentication. More secure than sending password with every request. DNA Center uses this model." },
+      { cat: "REST APIs", q: "What is the difference between PUT and PATCH in REST APIs?", opts: ["PUT adds a resource; PATCH removes it", "PUT REPLACES the entire resource; PATCH partially UPDATES only specified fields", "They are identical", "PUT is for GET requests; PATCH is for POST requests"], ans: 1, exp: "PUT = full replacement. Send the complete updated resource — fields not included are set to null/default. PATCH = partial update. Send only the fields you want to change — other fields unchanged. Example: PATCH to update just the description field of a device config without affecting other settings." },
+      { cat: "REST APIs", q: "A REST API call returns HTTP 500. What does this indicate?", opts: ["Client authentication failed", "Resource not found", "Internal Server Error — problem on the server side, not the client", "Request was successful"], ans: 2, exp: "HTTP 5xx = server-side errors: 500 Internal Server Error (generic server crash/bug), 502 Bad Gateway (server got invalid response from upstream), 503 Service Unavailable (server overloaded/maintenance). Client is NOT at fault. Unlike 4xx (client errors): 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found." },
+      { cat: "REST APIs", q: "Which data format is MOST commonly used in modern REST APIs?", opts: ["XML", "CSV", "JSON (JavaScript Object Notation)", "YAML"], ans: 2, exp: "JSON dominates modern REST APIs: human-readable, compact, native to JavaScript (browser-friendly), easy to parse in any language. XML is used in older APIs and NETCONF/SOAP. YAML is popular for configuration files (Ansible) but rarely used in REST API responses. Most Cisco APIs (DNA Center, Meraki, FTD) use JSON." },
+      // ── JSON ─────────────────────────────────────────────────────────────────────
+      { cat: "JSON", hot: 1, q: "In JSON, what character wraps an OBJECT (collection of key-value pairs)?", opts: ["[ ]  square brackets", "{ }  curly braces", "( )  parentheses", "< >  angle brackets"], ans: 1, exp: "JSON structure: { } = OBJECT (key-value pairs). [ ] = ARRAY (ordered list of values). Keys must be strings in double quotes. Values can be: string, number, boolean, null, array, or object. Example: {\"hostname\": \"R1\", \"interfaces\": [\"Gi0/0\", \"Gi0/1\"]} — object with string and array values." },
+      { cat: "JSON", hot: 1, q: "In JSON, what character wraps an ARRAY (ordered list of values)?", opts: ["{ } curly braces", "[ ] square brackets", "( ) parentheses", "' ' single quotes"], ans: 1, exp: "JSON array: [ ] square brackets contain an ordered list. Values separated by commas. Arrays can contain: strings, numbers, booleans, objects, or other arrays. Example: \"vlans\": [10, 20, 30] or \"neighbors\": [{\"id\": \"1.1.1.1\"}, {\"id\": \"2.2.2.2\"}]." },
+      { cat: "JSON", hot: 1, q: "What JSON data type is represented by true or false (no quotes)?", opts: ["String", "Number", "Boolean", "Null"], ans: 2, exp: "JSON data types: String = \"text in double quotes\". Number = 42 or 3.14 (no quotes). Boolean = true or false (lowercase, no quotes). Null = null (no quotes). Array = [value1, value2]. Object = {\"key\": value}. Note: true/false/null in JSON are NEVER in quotes — 'true' (with quotes) would be a string, not boolean." },
+      { cat: "JSON", q: "What is wrong with this JSON? {\"hostname\": 'Router1', \"active\": True}", opts: ["Nothing — it's valid JSON", "Two errors: strings must use double quotes not single quotes; booleans must be lowercase (true not True)", "The key needs to be a number", "Commas are not allowed"], ans: 1, exp: "JSON errors: (1) 'Router1' uses single quotes — JSON REQUIRES double quotes for strings. (2) True is capitalized — JSON booleans are lowercase: true/false/null. Valid: {\"hostname\": \"Router1\", \"active\": true}. These are very common exam JSON reading questions — know the exact rules." },
+      { cat: "JSON", hot: 1, q: "What is the VALUE of 'interfaces' in this JSON? {\"device\": \"SW1\", \"interfaces\": [\"Gi0/0\", \"Gi0/1\", \"Gi0/2\"]}", opts: ["A string", "A number", "An array of three strings", "An object"], ans: 2, exp: "\"interfaces\": [\"Gi0/0\", \"Gi0/1\", \"Gi0/2\"] — the square brackets [ ] mean it's an ARRAY. The array contains 3 string values. To access: interfaces[0] = \"Gi0/0\", interfaces[1] = \"Gi0/1\", interfaces[2] = \"Gi0/2\". Arrays are zero-indexed in most programming languages." },
+      { cat: "JSON", q: "In JSON, how is a null value represented?", opts: ["\"null\" (with double quotes)", "NULL (uppercase)", "null (lowercase, no quotes)", "0 (zero)"], ans: 2, exp: "JSON null = the keyword null — lowercase, no quotes. Represents absence of a value. Example: \"description\": null means the description field exists but has no value. Different from \"\" (empty string) or 0 (zero number). In 'show ip route', a missing next-hop might be represented as null in a JSON API response." },
+      { cat: "JSON", q: "Given this JSON: {\"ospf\": {\"process\": 1, \"router-id\": \"1.1.1.1\", \"area\": 0, \"passive\": false}}. What is the data type of 'passive'?", opts: ["String", "Number", "Boolean", "Object"], ans: 2, exp: "\"passive\": false — false (lowercase, no quotes) is a Boolean value in JSON. The OSPF passive interface setting is either true (passive) or false (not passive). Booleans are perfect for on/off settings. Data types in this object: process=Number(1), router-id=String(\"1.1.1.1\"), area=Number(0), passive=Boolean(false)." },
+      { cat: "JSON", hot: 1, q: "How many key-value pairs does this JSON object have? {\"hostname\": \"R1\", \"ip\": \"10.1.1.1\", \"reachable\": true, \"neighbors\": 3}", opts: ["2", "3", "4", "5"], ans: 2, exp: "Count the comma-separated key-value pairs in the object: (1) \"hostname\": \"R1\", (2) \"ip\": \"10.1.1.1\", (3) \"reachable\": true, (4) \"neighbors\": 3. Total = 4 key-value pairs. The exam may show a JSON snippet and ask how many elements, what type a value is, or what a specific value equals." },
+      { cat: "JSON", q: "What is the correct JSON representation of a device with hostname 'SW1', management IP '192.168.1.1', and two VLANs (10 and 20)?", opts: ["{hostname: SW1, ip: 192.168.1.1, vlans: [10, 20]}", "{\"hostname\": \"SW1\", \"ip\": \"192.168.1.1\", \"vlans\": [10, 20]}", "{'hostname': 'SW1', 'ip': '192.168.1.1', 'vlans': [10, 20]}", "{\"hostname\": \"SW1\", \"ip\": \"192.168.1.1\", \"vlans\": {10, 20}}"], ans: 1, exp: "Correct JSON: all keys and string values in DOUBLE quotes. Numbers (10, 20) without quotes. Array with [ ]. Option A: no quotes around keys/values (invalid). Option C: single quotes (invalid in JSON). Option D: uses { } for vlans but it should be [ ] for an array (a set of numbers, not key-value pairs)." },
+      // ── ANSIBLE & TERRAFORM ──────────────────────────────────────────────────────
+      { cat: "Ansible & Terraform", hot: 1, q: "Which configuration management tool is AGENTLESS and uses SSH to connect to network devices?", opts: ["Puppet", "Chef", "Ansible", "SaltStack with agents"], ans: 2, exp: "Ansible = agentless. No software installed on managed devices — uses SSH (or NETCONF/REST for network devices). The 'control node' (where Ansible runs) pushes configurations to devices. Written in Python. Playbooks in YAML. Modules handle device-specific tasks (cisco.ios.ios_config for Cisco IOS)." },
+      { cat: "Ansible & Terraform", hot: 1, q: "Which file format does Ansible use for its automation playbooks?", opts: ["JSON", "XML", "HCL", "YAML"], ans: 3, exp: "Ansible playbooks use YAML (YAML Ain't Markup Language). YAML is human-readable, indentation-based. A playbook defines: hosts (target devices), tasks (what to do), and modules (how to do it). Example module: cisco.ios.ios_config applies IOS commands. Ansible inventory files list the managed devices." },
+      { cat: "Ansible & Terraform", hot: 1, q: "What is the key difference between Ansible and Terraform?", opts: ["Ansible uses YAML; Terraform uses JSON", "Ansible = configuration management (configures existing devices); Terraform = infrastructure provisioning (creates/destroys infrastructure resources)", "Ansible is paid; Terraform is free", "They are identical in function"], ans: 1, exp: "Ansible: best for CONFIGURATION MANAGEMENT — configuring devices that already exist (push IOS commands, update VLAN configs, deploy ACLs). Terraform: best for INFRASTRUCTURE PROVISIONING — creating/destroying infrastructure (spin up cloud VMs, VPCs, networks). Terraform tracks STATE; Ansible doesn't. Both are agentless." },
+      { cat: "Ansible & Terraform", hot: 1, q: "What language does Terraform use for its configuration files?", opts: ["YAML", "JSON", "Python", "HCL (HashiCorp Configuration Language)"], ans: 3, exp: "Terraform uses HCL (HashiCorp Configuration Language) — a declarative language designed specifically for infrastructure definition. HCL files describe the DESIRED STATE of infrastructure. Terraform compares desired state to current state (tracked in state file) and makes only the necessary changes. More infrastructure-focused than Ansible's task-based approach." },
+      { cat: "Ansible & Terraform", q: "What does 'idempotent' mean in the context of configuration management?", opts: ["The tool requires root access", "Running the same operation multiple times produces the same result — no duplicate changes", "The tool works on all platforms", "Configurations are encrypted"], ans: 1, exp: "Idempotent: applying the same configuration multiple times has the same effect as applying it once. Example: 'ensure VLAN 10 exists' — if VLAN 10 already exists, Ansible does nothing (doesn't try to create a duplicate). This is safe to run repeatedly. Terraform is fully idempotent by design; Ansible is mostly idempotent depending on modules used." },
+      { cat: "Ansible & Terraform", q: "What is an Ansible 'inventory file'?", opts: ["Log file of past deployments", "List of managed devices (IPs/hostnames) organized into groups that Ansible connects to", "The Ansible playbook containing tasks", "The Ansible vault for storing passwords"], ans: 1, exp: "Ansible inventory: defines what devices Ansible manages. Lists device IPs or hostnames, organized into groups (e.g., [routers], [switches], [datacenter]). Can specify connection type, credentials, and device-specific variables per host. Ansible playbooks reference inventory groups to determine which devices get which configuration." },
+      { cat: "Ansible & Terraform", q: "What is Terraform's 'state file' used for?", opts: ["Storing encrypted passwords", "Tracking the current state of provisioned infrastructure so Terraform knows what already exists and what needs to change", "Logging all API calls", "Defining the desired infrastructure configuration"], ans: 1, exp: "Terraform state file (terraform.tfstate): records the current real-world state of all managed resources. When you run 'terraform apply', Terraform compares: desired state (HCL files) vs current state (state file). Only makes changes for differences. Without state file, Terraform can't know what already exists. Critical: store state file securely (contains sensitive data)." },
+      { cat: "Ansible & Terraform", q: "Which of the following is a Cisco-specific Ansible module for configuring IOS devices?", opts: ["ios_config", "cisco_router_config", "network_ios_commands", "cli_config_ios"], ans: 0, exp: "'cisco.ios.ios_config' (commonly called 'ios_config') is the Ansible module for pushing IOS configuration commands. Example task: module: cisco.ios.ios_config with lines: ['router ospf 1', 'network 10.0.0.0 0.255.255.255 area 0']. Ansible has modules for Cisco IOS, IOS-XE, IOS-XR, NX-OS, ASA, and many other vendors." },
+      { cat: "Ansible & Terraform", q: "Puppet and Chef are configuration management tools. How do they differ from Ansible regarding agents?", opts: ["All three are agentless", "Puppet and Chef require agents installed on managed devices; Ansible is agentless", "Ansible requires agents; Puppet and Chef are agentless", "They all use the same agent-based approach"], ans: 1, exp: "Puppet and Chef = agent-based (pull model): managed nodes run an agent that periodically checks the Puppet/Chef server for desired state and applies it locally. Ansible = agentless (push model): no agent needed, uses SSH. For network devices (routers/switches), agentless is generally preferred since installing agents on network OS is often impossible." },
+      // ── NETCONF & RESTCONF ────────────────────────────────────────────────────────
+      { cat: "NETCONF & RESTCONF", hot: 1, q: "What transport protocol and port does NETCONF use?", opts: ["HTTPS port 443", "HTTP port 80", "SSH port 830", "UDP port 161"], ans: 2, exp: "NETCONF (RFC 6241) uses SSH as transport on port 830 (not the standard SSH port 22). NETCONF provides: structured configuration management using XML data models (YANG models). Operations: get, get-config, edit-config, copy-config, delete-config, commit. Used by DNA Center as a southbound protocol to configure devices." },
+      { cat: "NETCONF & RESTCONF", q: "How does RESTCONF differ from NETCONF?", opts: ["They are identical", "RESTCONF uses HTTPS (port 443) and JSON/XML; NETCONF uses SSH (port 830) and XML only", "RESTCONF is older; NETCONF is newer", "NETCONF uses REST; RESTCONF uses SOAP"], ans: 1, exp: "RESTCONF (RFC 8040) = REST-style interface to NETCONF functionality. Uses HTTPS (port 443) with JSON or XML data encoding. Maps NETCONF operations to HTTP verbs: GET=retrieve, POST=create, PUT=replace, PATCH=update, DELETE=remove. More developer-friendly than NETCONF since it uses familiar HTTP/REST paradigms." },
+      { cat: "NETCONF & RESTCONF", q: "What data modeling language is used with both NETCONF and RESTCONF to define configuration structure?", opts: ["JSON Schema", "XML DTD", "YANG (Yet Another Next Generation)", "SNMP MIB"], ans: 2, exp: "YANG (RFC 6020/7950) = the data modeling language for NETCONF and RESTCONF. YANG defines the structure, syntax, and semantics of configuration and operational data. Network vendors publish YANG models for their devices. Tools parse YANG models to understand what parameters a device supports and how they're organized." },
+      // ── CLOUD NETWORKING ──────────────────────────────────────────────────────────
+      { cat: "Cloud & Virtualization", q: "What are the three main cloud service models?", opts: ["Public, Private, Hybrid", "IaaS, PaaS, SaaS", "AWS, Azure, GCP", "Storage, Compute, Network"], ans: 1, exp: "Cloud service models: IaaS (Infrastructure as a Service) = VMs, storage, networking (AWS EC2, Azure VMs). PaaS (Platform as a Service) = development environment (AWS Elastic Beanstalk, Google App Engine). SaaS (Software as a Service) = complete application (Salesforce, Microsoft 365, Cisco Webex). Network engineers mainly work with IaaS." },
+      { cat: "Cloud & Virtualization", q: "What is the difference between public, private, and hybrid cloud?", opts: ["Public=on-premises; private=internet", "Public=shared infrastructure (AWS/Azure/GCP) open to all; private=dedicated infrastructure for one organization; hybrid=mix of public and private", "Public=cheaper; private=more expensive always", "They are the same"], ans: 1, exp: "Public cloud: shared infrastructure managed by provider (AWS, Azure, GCP) — pay per use, highly scalable. Private cloud: dedicated infrastructure for one organization — more control, higher cost, on-premises or hosted. Hybrid cloud: combination — sensitive data on private, scalable workloads on public. Most enterprises use hybrid." },
+      { cat: "Cloud & Virtualization", q: "How does cloud networking affect traditional WAN design?", opts: ["No impact — cloud uses the same WAN as before", "Applications moving to cloud → direct internet access from branches (SD-WAN) becomes preferred over backhauling traffic through HQ to reach cloud", "Cloud requires more physical routers", "Cloud eliminates the need for routing protocols"], ans: 1, exp: "Cloud shifts traffic patterns: traditional WAN sent all branch traffic to HQ first (hub and spoke), then HQ sent to internet/cloud. With cloud apps (Office 365, Salesforce), this adds unnecessary latency. SD-WAN enables direct cloud access from each branch with centralized policy — better performance, lower cost than MPLS backhauling." },
+      // ── SCENARIO / APPLICATION ────────────────────────────────────────────────────
+      { cat: "Scenario: Automation", hot: 1, q: "A network engineer writes an Ansible playbook to configure VLANs on 50 switches. The playbook runs successfully. Running it AGAIN immediately after causes no changes. Why?", opts: ["Ansible detected an error and stopped", "Ansible is idempotent — the desired state already exists, so no changes are made", "The playbook needs to be re-compiled first", "Ansible cached the previous results"], ans: 1, exp: "Idempotency: Ansible checks current state before making changes. If VLAN 10 already exists on all switches, 'ensure VLAN 10 exists' does nothing — not recreate the VLAN or generate errors. Safe to run repeatedly without side effects. This is a core feature of configuration management tools and a common exam concept." },
+      { cat: "Scenario: Automation", hot: 1, q: "A developer makes a GET request to DNA Center API: GET /dna/intent/api/v1/network-device and receives HTTP 401. What is the problem?", opts: ["The URL is wrong", "The device doesn't exist in inventory", "Authentication failed — the token is missing, expired, or invalid", "The DNA Center server is down"], ans: 2, exp: "HTTP 401 Unauthorized = authentication problem. For DNA Center API: you need to first POST to /dna/system/api/v1/auth/token with valid credentials to get a token. Then include the token in subsequent requests: 'X-Auth-Token: [token]' header. If token is missing or expired, you get 401. Fix: re-authenticate to get a fresh token." },
+      { cat: "Scenario: Automation", q: "An engineer wants to check the current configuration of a router via REST API without making any changes. Which HTTP method should be used?", opts: ["POST", "PUT", "DELETE", "GET"], ans: 3, exp: "GET = read-only retrieval. It's idempotent and safe — no changes to server state. Use GET to: retrieve device configs, check interface status, read routing tables, list network devices. Never use POST/PUT/DELETE when you only want to read data — those methods create/modify/delete resources." },
+      { cat: "Scenario: Automation", hot: 1, q: "A JSON API response contains: {\"status\": \"success\", \"devices\": [{\"name\": \"SW1\"}, {\"name\": \"SW2\"}]}. How many devices are in the 'devices' array?", opts: ["0", "1", "2", "3"], ans: 2, exp: "The 'devices' key contains an array [ ] with TWO objects: {\"name\": \"SW1\"} and {\"name\": \"SW2\"}. Arrays are zero-indexed: devices[0] = {\"name\": \"SW1\"}, devices[1] = {\"name\": \"SW2\"}. Count comma-separated items within [ ] to determine array length. This type of JSON reading question is common on CCNA exams." },
+      { cat: "Scenario: Automation", q: "A network team wants to automate provisioning of AWS VPCs, subnets, and security groups. Which tool is BEST suited?", opts: ["Ansible playbooks", "Terraform HCL", "Manual AWS console", "SNMP"], ans: 1, exp: "Terraform excels at INFRASTRUCTURE PROVISIONING — creating/managing cloud resources like AWS VPCs, subnets, route tables, security groups, EC2 instances. Terraform's state tracking handles cloud resource lifecycle management. Ansible can also manage AWS resources but Terraform's declarative approach and state management make it superior for provisioning." },
+      { cat: "Scenario: Automation", q: "Which tool would be BEST for pushing IOS configuration changes to 100 existing Cisco routers?", opts: ["Terraform", "Puppet", "Ansible with ios_config module", "SNMP SET operations"], ans: 2, exp: "Ansible with cisco.ios.ios_config module = best for pushing IOS configuration to existing Cisco devices. Ansible: agentless (just needs SSH), YAML playbooks, Cisco-specific modules, widely used in network automation. Terraform is better for infrastructure creation. SNMP SET is limited. Puppet requires agents (not practical on network devices)." },
+      // ── ADVANCED ─────────────────────────────────────────────────────────────────
+      { cat: "SDN Architecture", q: "What is 'intent-based networking' (IBN)?", opts: ["Configuring devices based on CLI commands", "Expressing desired BUSINESS INTENT (outcomes) and having the system automatically translate that into device configurations — DNA Center's core philosophy", "A type of wireless security", "A Cisco proprietary routing protocol"], ans: 1, exp: "IBN (Intent-Based Networking): instead of configuring low-level device parameters, you express high-level business intent: 'Finance department can access accounting servers but not engineering servers.' The system (DNA Center) automatically translates intent into appropriate network configurations, ACLs, and policies across all relevant devices." },
+      { cat: "REST APIs", q: "What is the purpose of the 'Content-Type: application/json' header in a REST API request?", opts: ["Tells the server which compression to use", "Specifies that the request body is formatted as JSON — server should parse it as JSON", "Sets authentication credentials", "Defines the API version"], ans: 1, exp: "Content-Type header tells the server the FORMAT of the request body. 'Content-Type: application/json' = the request body is JSON-formatted data. Similarly, 'Accept: application/json' in the request tells the server to respond with JSON. Both headers are typically included in REST API requests that send a body (POST, PUT, PATCH)." },
+      { cat: "JSON", q: "What does this JSON represent: {\"routes\": null}?", opts: ["The 'routes' key has a value of zero", "The 'routes' key exists but has no value (null)", "The 'routes' key is missing from the object", "This is invalid JSON"], ans: 1, exp: "null in JSON = the key EXISTS but has no meaningful value. Different from: missing key (key not present at all), \"\" (empty string), 0 (zero number), [] (empty array). 'routes: null' might mean the routing table was queried but no routes exist, or the data hasn't been populated yet." },
+      { cat: "Ansible & Terraform", q: "What is the difference between 'declarative' and 'imperative' configuration management approaches?", opts: ["Declarative uses YAML; imperative uses Python only", "Declarative: define DESIRED STATE, system figures out how; Imperative: define STEP-BY-STEP instructions for how to achieve state", "They are the same", "Declarative is newer; imperative is legacy"], ans: 1, exp: "Declarative (Terraform, Ansible mostly): 'I want 3 VLANs: 10, 20, 30' — the tool figures out what commands to run. Idempotent. State-driven. Imperative (traditional scripts, CLI): 'Run: vlan 10, vlan 20, vlan 30' — explicit step-by-step commands. Not idempotent — running twice may cause errors. Modern automation favors declarative for its idempotency and readability." },
+      { cat: "Cisco DNA Center", hot: 1, q: "DNA Center uses which API type for northbound communication with external applications?", opts: ["NETCONF/SSH", "OpenFlow", "REST API (JSON over HTTPS)", "SNMP v3"], ans: 2, exp: "DNA Center Northbound API = REST API using JSON over HTTPS (port 443). External applications (custom scripts, monitoring tools, ITSM systems) communicate with DNA Center via REST. Common operations: GET device inventory, POST new site, GET network health, trigger device provisioning. Authentication uses token-based auth (POST to /auth/token first)." },
+      { cat: "AI and ML in Networking", q: "What is 'reinforcement learning' and how might it apply to networking?", opts: ["Learning from labeled datasets", "Learning by trial and reward signals — the agent takes actions, receives rewards/penalties, and learns optimal strategy over time", "Learning without any training data", "Copying configurations from one device to another"], ans: 1, exp: "Reinforcement learning (RL): an AI agent takes actions in an environment, receives reward (good action) or penalty (bad action), and learns the optimal policy to maximize cumulative reward. Network applications: optimizing routing decisions over time, adaptive load balancing, automated network configuration optimization — the AI tries configurations and learns from the results." },
+      { cat: "Traditional vs Controller", q: "Which Cisco product is a cloud-based network management solution that requires NO on-premises controller hardware?", opts: ["Cisco DNA Center", "Cisco Prime Infrastructure", "Cisco Meraki (cloud-managed networking)", "Cisco ISE"], ans: 2, exp: "Cisco Meraki = cloud-managed networking (switches, APs, firewalls). All configuration managed through the Meraki cloud dashboard — no on-premises controller hardware needed. Devices phone home to Meraki cloud. True zero-touch: new device gets plugged in, claims itself from dashboard. DNA Center = on-premises or virtual appliance controller." },
+    ];
+
+    let uA = {}, sub = {}, cf = 'all';
+    function rl() {
+      const s = document.getElementById('search').value.toLowerCase();
+      const c = document.getElementById('qlist');
+      let h = '', prev = '';
+      qs.forEach((q, i) => {
+        if (cf === 'correct' && !(sub[i] && uA[i] === q.ans)) return;
+        if (cf === 'wrong' && !(sub[i] && uA[i] !== q.ans)) return;
+        if (cf === 'unattempted' && sub[i]) return;
+        if (s && !q.q.toLowerCase().includes(s) && !q.cat.toLowerCase().includes(s) && !q.exp.toLowerCase().includes(s)) return;
+        if (q.cat !== prev) { h += `<div class="cat-header">📌 ${q.cat}</div>`; prev = q.cat; }
+        const iS = sub[i], iC = iS && uA[i] === q.ans, iW = iS && uA[i] !== q.ans;
+        let cc = 'q-card'; if (iC) cc += ' answered-correct'; if (iW) cc += ' answered-wrong';
+        let badge = '';
+        if (iC) badge = '<span class="result-badge rb-correct">✓ Correct</span>';
+        else if (iW) badge = '<span class="result-badge rb-wrong">✗ Wrong</span>';
+        else if (uA[i] !== undefined) badge = '<span class="result-badge" style="background:#e0f2fe;color:#0369a1">Selected</span>';
+        h += `<div class="${cc}" id="qc${i}">
+      <div class="q-header">
+        <span class="q-num">Q${i + 1}${q.hot ? '<span class="tag-hot">🔥</span>' : ''}</span>
+        <span style="flex:1"></span>${badge}
+        <span class="q-category">${q.cat}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">`;
+        ['A', 'B', 'C', 'D'].forEach((L, oi) => {
+          let cls = 'opt';
+          if (uA[i] === oi && !iS) cls += ' selected';
+          if (iS && oi === q.ans) cls += ' correct-ans';
+          if (iS && uA[i] === oi && oi !== q.ans) cls += ' wrong-ans';
+          const d = iS ? 'style="cursor:default"' : `onclick="sel(${i},${oi})"`;
+          h += `<div class="${cls}" ${d}><span class="opt-letter">${L}</span>${q.opts[oi]}</div>`;
+        });
+        h += `</div><div class="btn-row">
+      ${!iS ? `<button class="btn btn-submit" onclick="sbQ(${i})">Submit</button>` : ''}
+      <button class="btn btn-show" onclick="tgE(${i})">Explanation</button>
+      ${iS ? `<button class="btn btn-reset-q" onclick="rsQ(${i})">Reset</button>` : ''}
+    </div>
+    <div class="explanation" id="ex${i}"><strong>✅ </strong>${q.exp}</div></div>`;
+      });
+      if (!h) h = '<div style="padding:20px;text-align:center;color:#888">No matching questions.</div>';
+      c.innerHTML = h; upS();
+    }
+    function sel(i, o) { if (sub[i]) return; uA[i] = o; rl(); }
+    function sbQ(i) { if (uA[i] === undefined) { alert('Select an answer!'); return; } sub[i] = true; rl(); }
+    function tgE(i) { const e = document.getElementById('ex' + i); if (e) e.classList.toggle('show'); }
+    function rsQ(i) { delete uA[i]; delete sub[i]; rl(); }
+    function saAll() { qs.forEach((_, i) => { if (uA[i] !== undefined) sub[i] = true; }); rl(); }
+    function raAll() { document.querySelectorAll('.explanation').forEach(e => e.classList.add('show')); }
+    function resetAll() { if (!confirm('Reset all?')) return; uA = {}; sub = {}; rl(); }
+    function showScore() {
+      const tot = qs.length, att = Object.keys(sub).length;
+      const cor = qs.filter((q, i) => sub[i] && uA[i] === q.ans).length;
+      const pct = att > 0 ? Math.round(cor / tot * 100) : 0;
+      const g = pct >= 90 ? '🏆 CCNA Ready — Book Your Exam!' : pct >= 75 ? '👍 Almost There — Review Weak Areas' : pct >= 60 ? '📚 Keep Practicing — Nearly Ready' : '🔄 More Study Required';
+      const ov = document.createElement('div'); ov.className = 'overlay'; ov.onclick = cm;
+      const md = document.createElement('div'); md.className = 'score-modal';
+      md.innerHTML = `<h2>Domain 6 Score</h2><div class="big">${pct}%</div>
+    <p style="margin:8px 0;font-size:14px">${cor}/${tot} correct</p>
+    <p style="color:#dc2626">Wrong: ${att - cor}</p>
+    <p style="color:#6b7280;margin-bottom:12px">Unattempted: ${tot - att}</p>
+    <p style="font-size:16px;font-weight:700;color:#5B3FD4">${g}</p>
+    <p style="font-size:12px;color:#888;margin-top:10px">You have completed all 600 CCNA MCQs! 🎓</p>
+    <button class="gbtn gbtn-primary" style="margin-top:14px" onclick="cm()">Close</button>`;
+      document.body.appendChild(ov); document.body.appendChild(md); window._m = md; window._o = ov;
+    }
+    function cm() { if (window._m) window._m.remove(); if (window._o) window._o.remove(); }
+    function upS() {
+      const tot = qs.length, att = Object.keys(sub).length;
+      const cor = qs.filter((q, i) => sub[i] && uA[i] === q.ans).length;
+      document.getElementById('s-total').textContent = tot;
+      document.getElementById('s-correct').textContent = cor;
+      document.getElementById('s-wrong').textContent = att - cor;
+      document.getElementById('s-unattempted').textContent = tot - att;
+      const pct = att > 0 ? Math.round(cor / tot * 100) : 0;
+      document.getElementById('s-pct').textContent = pct + '%';
+      document.getElementById('prog').style.width = Math.round(att / tot * 100) + '%';
+    }
+    function sf(f, btn) { cf = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); rl(); }
+    function af() { rl(); }
+
+    // ----------------------------------------------
+
+    // Fisher-Yates shuffle
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Shuffle options and fix answer index
+    function shuffleQuestions() {
+      qs.forEach(q => {
+        const correctAnswer = q.opts[q.ans];
+
+        const paired = q.opts.map((opt, idx) => ({
+          text: opt,
+          wasCorrect: idx === q.ans
+        }));
+
+        shuffle(paired);
+
+        q.opts = paired.map(x => x.text);
+        q.ans = paired.findIndex(x => x.wasCorrect);
+      });
+
+      shuffle(qs);
+    }
+
+    // Run once when page loads
+    shuffleQuestions();
+
+    // ----------------------------------------------
+
+
+    rl();
+  </script>
+</body>
+
+</html>
