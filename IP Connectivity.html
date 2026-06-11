@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:transparent;color:var(--fg,#1a1a1a);font-size:13px;padding:10px}
+h1{font-size:15px;color:var(--accent,#5B3FD4);margin-bottom:4px;border-bottom:2px solid var(--accent,#5B3FD4);padding-bottom:6px}
+.stats-bar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.stat{background:var(--surface2,#f0eeff);border-radius:8px;padding:6px 14px;text-align:center;flex:1;min-width:70px}
+.stat .v{font-size:18px;font-weight:800;color:var(--accent,#5B3FD4)}
+.stat .l{font-size:10px;color:#888}
+.stat.correct .v{color:#16a34a}
+.stat.wrong .v{color:#dc2626}
+.stat.skip .v{color:#d97706}
+.progress-wrap{background:#e5e7eb;border-radius:10px;height:10px;margin-bottom:10px}
+.progress-fill{height:10px;border-radius:10px;background:linear-gradient(90deg,#5B3FD4,#1D9E75);transition:width 0.3s}
+.filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.filter-bar input{flex:1;min-width:160px;padding:6px 10px;border-radius:6px;border:1.5px solid var(--accent,#5B3FD4);font-size:12px;background:var(--surface,#f8f8f8);color:var(--fg,#1a1a1a)}
+.filter-btn{padding:5px 12px;border-radius:16px;border:1.5px solid #aaa;background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:#555}
+.filter-btn.active{background:var(--accent,#5B3FD4);color:#fff;border-color:var(--accent,#5B3FD4)}
+.q-card{border:1.5px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden;transition:border-color 0.2s}
+.q-card.answered-correct{border-color:#16a34a}
+.q-card.answered-wrong{border-color:#dc2626}
+.q-header{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px 6px;gap:10px;flex-wrap:wrap}
+.q-num{font-weight:800;color:var(--accent,#5B3FD4);font-size:12px;flex-shrink:0}
+.q-category{font-size:10px;background:var(--accent,#5B3FD4);color:#fff;border-radius:10px;padding:2px 8px;flex-shrink:0}
+.q-text{padding:0 14px 10px;font-weight:600;font-size:13px;line-height:1.5}
+.options{padding:0 14px 10px;display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:7px 12px;border-radius:7px;border:1.5px solid #e5e7eb;cursor:pointer;transition:all 0.15s;line-height:1.4}
+.opt:hover{border-color:var(--accent,#5B3FD4);background:var(--surface2,#f0eeff)}
+.opt.selected{border-color:var(--accent,#5B3FD4);background:var(--surface2,#f0eeff)}
+.opt.correct-ans{border-color:#16a34a;background:#f0fdf4;font-weight:700}
+.opt.wrong-ans{border-color:#dc2626;background:#fef2f2}
+.opt-letter{font-weight:800;color:var(--accent,#5B3FD4);flex-shrink:0;width:16px}
+.opt.correct-ans .opt-letter{color:#16a34a}
+.opt.wrong-ans .opt-letter{color:#dc2626}
+.explanation{margin:0 14px 12px;padding:10px 12px;border-radius:7px;background:var(--surface2,#f0faf8);border-left:4px solid #1D9E75;font-size:12px;line-height:1.6;display:none}
+.explanation.show{display:block}
+.explanation strong{color:#1D9E75}
+.btn-row{display:flex;gap:8px;padding:0 14px 12px;flex-wrap:wrap}
+.btn{padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+.btn-submit{background:var(--accent,#5B3FD4);color:#fff}
+.btn-submit:hover{opacity:0.85}
+.btn-show{background:#1D9E75;color:#fff}
+.btn-show:hover{opacity:0.85}
+.btn-reset-q{background:#e5e7eb;color:#555}
+.result-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.rb-correct{background:#dcfce7;color:#16a34a}
+.rb-wrong{background:#fee2e2;color:#dc2626}
+.global-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.gbtn{padding:6px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700}
+.gbtn-primary{background:var(--accent,#5B3FD4);color:#fff}
+.gbtn-green{background:#16a34a;color:#fff}
+.gbtn-red{background:#dc2626;color:#fff}
+.gbtn-gray{background:#6b7280;color:#fff}
+.tag-hot{background:#e05a2b;color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;margin-left:4px}
+.cat-header{background:var(--surface2,#f0eeff);padding:6px 14px;font-weight:700;font-size:12px;color:var(--accent,#5B3FD4);border-bottom:1px solid #e5e7eb;letter-spacing:0.5px}
+.score-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.3);z-index:100;text-align:center;min-width:280px;max-width:90vw}
+.score-modal h2{font-size:22px;margin-bottom:8px;color:var(--accent,#5B3FD4)}
+.score-modal .big{font-size:48px;font-weight:900;color:var(--accent,#5B3FD4)}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:99}
+</style>
+</head>
+<body>
+<h1>🎯 CCNA Domain 3: IP Connectivity — 100 Exam MCQs</h1>
+<div class="stats-bar">
+  <div class="stat"><div class="v" id="s-total">100</div><div class="l">Total</div></div>
+  <div class="stat correct"><div class="v" id="s-correct">0</div><div class="l">Correct</div></div>
+  <div class="stat wrong"><div class="v" id="s-wrong">0</div><div class="l">Wrong</div></div>
+  <div class="stat skip"><div class="v" id="s-unattempted">100</div><div class="l">Remaining</div></div>
+  <div class="stat"><div class="v" id="s-pct">0%</div><div class="l">Score</div></div>
+</div>
+<div class="progress-wrap"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div class="filter-bar">
+  <input type="text" id="search" placeholder="🔍 Search by keyword or topic..." oninput="applyFilters()">
+  <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('unattempted',this)">Remaining</button>
+  <button class="filter-btn" onclick="setFilter('correct',this)">✓ Correct</button>
+  <button class="filter-btn" onclick="setFilter('wrong',this)">✗ Wrong</button>
+</div>
+<div class="global-btns">
+  <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All</button>
+  <button class="gbtn gbtn-green" onclick="revealAll()">Show All Explanations</button>
+  <button class="gbtn gbtn-gray" onclick="resetAll()">Reset Quiz</button>
+  <button class="gbtn gbtn-red" onclick="showScore()">📊 Score</button>
+</div>
+<div id="qlist"></div>
+<script>
+const qs=[
+// ── ROUTING TABLE ──────────────────────────────────────────────────────────
+{cat:"Routing Table",hot:1,q:"A router has these routes: S 10.1.1.0/24, O 10.1.1.0/26, C 10.1.1.0/28. A packet arrives for 10.1.1.18. Which route is used?",opts:["S 10.1.1.0/24 — static routes preferred","O 10.1.1.0/26 — OSPF preferred","C 10.1.1.0/28 — longest prefix match wins","All three — load balancing"],ans:2,exp:"Longest prefix match ALWAYS wins regardless of AD or protocol. /28 > /26 > /24. 10.1.1.18 falls within 10.1.1.16/28 (hosts .17-.30). The /28 connected route is used. This is the single most important routing rule."},
+{cat:"Routing Table",hot:1,q:"What does the 'Gateway of last resort' entry in a routing table indicate?",opts:["The router's management IP","The default route — where packets go when no specific match exists","The next-hop for OSPF routes","The router's loopback address"],ans:1,exp:"'Gateway of last resort' = the default route (0.0.0.0/0). When a packet's destination doesn't match any specific route, it's forwarded to the gateway of last resort. If not set, packets to unknown destinations are dropped."},
+{cat:"Routing Table",hot:1,q:"In 'show ip route', what do the numbers [110/2] represent for an OSPF route?",opts:["VLAN ID / interface number","Administrative Distance / Metric","Hop count / bandwidth","Priority / cost"],ans:1,exp:"[AD/Metric] format: 110 = Administrative Distance (OSPF's trustworthiness level), 2 = Metric (OSPF cost to reach the destination). Lower AD = more trusted source. Lower metric = better path within same protocol."},
+{cat:"Routing Table",hot:1,q:"A routing table shows: O 192.168.5.0/24 [110/2] via 10.1.1.2, 00:03:11, Gi0/0. What is 10.1.1.2?",opts:["The destination network","The next-hop router IP address","The local interface IP","The OSPF router ID"],ans:1,exp:"'via 10.1.1.2' = next-hop IP address — the IP of the NEXT router to forward this packet to. The local router sends the packet to 10.1.1.2, which then routes it closer to 192.168.5.0/24."},
+{cat:"Routing Table",q:"Which route code in 'show ip route' represents a directly connected network?",opts:["S","O","C","R"],ans:2,exp:"Route codes: C = Connected (directly attached network), L = Local (router's own interface IP), S = Static, O = OSPF, R = RIP, D = EIGRP, B = BGP. Connected and Local routes have AD=0 — most trusted."},
+{cat:"Routing Table",q:"A packet destined for 172.16.5.10 arrives. The routing table has: 172.16.0.0/16 via R1, 172.16.5.0/24 via R2, 0.0.0.0/0 via R3. Which path is taken?",opts:["Via R1 — most specific /16","Via R2 — most specific /24 wins","Via R3 — default route","Load balanced between R1 and R2"],ans:1,exp:"Longest prefix match: /24 is more specific than /16. 172.16.5.0/24 matches 172.16.5.10 more precisely than 172.16.0.0/16. R2 is chosen. Default route (R3) is only used when no other match exists."},
+{cat:"Routing Table",q:"Which administrative distance value is assigned to EIGRP internal routes?",opts:["1","90","110","120"],ans:1,exp:"AD values: Connected=0, Static=1, EIGRP internal=90, OSPF=110, RIP=120. Memory trick: 'Every Old Router' = EIGRP(90), OSPF(110), RIP(120). Lower AD = more trusted and preferred over higher AD."},
+{cat:"Routing Table",hot:1,q:"A router has both a static route and an OSPF route for 10.5.5.0/24. Which is installed in the routing table?",opts:["OSPF route — dynamic protocols preferred","Static route — AD 1 is lower than OSPF AD 110","Both are installed — load balancing","The most recently configured one"],ans:1,exp:"Static route AD=1, OSPF AD=110. Lower AD wins. The static route is installed in the routing table. The OSPF route is kept in the OSPF database but NOT installed. Only ONE source per prefix goes into the routing table (based on AD)."},
+{cat:"Routing Table",q:"What is the AD of a directly connected route?",opts:["0","1","5","10"],ans:0,exp:"Connected routes have AD=0 — the most trusted possible. A directly connected interface means the router KNOWS that network is there (it's attached). AD=0 can never be beaten by any other routing source."},
+{cat:"Routing Table",q:"Which command displays only the OSPF-learned routes in the routing table?",opts:["show ip route ospf","show ospf routes","show ip ospf database","show ip route O"],ans:0,exp:"'show ip route ospf' filters the routing table to show only routes with code 'O' (OSPF-learned). Similarly: 'show ip route static', 'show ip route connected'. The full table is 'show ip route'."},
+// ── FORWARDING DECISION ────────────────────────────────────────────────────
+{cat:"Forwarding Decision",hot:1,q:"A router's table has: 192.168.1.0/24 via R1 (AD 110), 192.168.1.0/24 via R2 (AD 1), 192.168.1.64/26 via R3 (AD 110). Packet for 192.168.1.100 — which route wins?",opts:["Via R1 — OSPF","Via R2 — AD 1 static","Via R3 — longest prefix /26 wins","Load balanced R1 and R2"],ans:2,exp:"Longest prefix match is checked FIRST before AD. 192.168.1.100 falls in 192.168.1.64/26 (.64-.127). /26 is more specific than /24. R3 wins regardless of AD 110 vs AD 1. Longest prefix ALWAYS beats AD."},
+{cat:"Forwarding Decision",hot:1,q:"What happens when a router receives a packet but has NO matching route and NO default route?",opts:["Floods the packet out all interfaces","Sends the packet back to the source","Drops the packet and sends ICMP Destination Unreachable","Holds the packet until a route appears"],ans:2,exp:"No matching route + no default route = packet dropped. The router sends an ICMP 'Destination Unreachable' (Type 3) back to the source. This is the routing equivalent of an ACL implicit deny."},
+{cat:"Forwarding Decision",q:"Two OSPF paths to 10.5.0.0/16 have equal cost. What does the router do?",opts:["Uses only the first path learned","Drops one path and uses the other","Installs both — Equal Cost Multi-Path (ECMP) load balancing","Uses the path with the lower next-hop IP"],ans:2,exp:"Equal Cost Multi-Path (ECMP): when multiple paths to the same destination have equal cost (same AD AND same metric), the router installs ALL equal-cost paths in the routing table and load-balances traffic across them."},
+{cat:"Forwarding Decision",q:"Which routing decision criteria is evaluated LAST (only as a final tiebreaker)?",opts:["Longest prefix match","Administrative Distance","Metric","Interface bandwidth"],ans:2,exp:"Decision order: (1) Longest prefix match → (2) Lowest AD (if same prefix from different sources) → (3) Lowest metric (if same protocol, multiple paths). Metric is only compared within the same routing protocol."},
+{cat:"Forwarding Decision",hot:1,q:"A packet for 8.8.8.8 arrives. Routing table has only: C 192.168.1.0/24 Gi0/0, S 0.0.0.0/0 via 203.0.113.1. What happens?",opts:["Packet is dropped — no specific route","Default route is used — sent via 203.0.113.1","Packet floods all interfaces","Router sends ARP for 8.8.8.8"],ans:1,exp:"0.0.0.0/0 (default route) matches ANY destination. Since no specific route for 8.8.8.8 exists, the default route is used. Packet is forwarded to 203.0.113.1 (the ISP gateway). This is exactly what default routes are for."},
+// ── STATIC ROUTING ─────────────────────────────────────────────────────────
+{cat:"Static Routing",hot:1,q:"Which static route command creates a default route pointing to 203.0.113.1?",opts:["ip route 0.0.0.0 255.255.255.255 203.0.113.1","ip route 0.0.0.0 0.0.0.0 203.0.113.1","ip route default 203.0.113.1","ip route 255.255.255.255 0.0.0.0 203.0.113.1"],ans:1,exp:"Default route: 'ip route 0.0.0.0 0.0.0.0 [next-hop]'. The quad-zero network (0.0.0.0) with quad-zero mask (0.0.0.0) matches ALL destinations. This creates the Gateway of Last Resort."},
+{cat:"Static Routing",hot:1,q:"What is a floating static route?",opts:["A route that changes automatically based on traffic","A static route with a higher AD than the primary dynamic route — serves as backup","A static route with a lower AD — always preferred","A route that floats between interfaces"],ans:1,exp:"Floating static = a static route with a manually configured higher AD (e.g., 200) than the primary dynamic protocol (e.g., OSPF=110). It stays 'hidden' while the dynamic route exists. When the dynamic route fails, the floating static 'floats up' into the routing table."},
+{cat:"Static Routing",hot:1,q:"Which command creates a floating static backup route for 10.2.0.0/24 that only activates if the primary OSPF route fails?",opts:["ip route 10.2.0.0 255.255.255.0 10.1.1.2","ip route 10.2.0.0 255.255.255.0 10.1.1.2 200","ip route 10.2.0.0 255.255.255.0 10.1.1.2 90","ip route 10.2.0.0 255.255.255.0 10.1.1.2 1"],ans:1,exp:"AD 200 > OSPF AD 110 → the static route is hidden while OSPF route exists. When OSPF fails (link down), the OSPF route disappears and the floating static (AD 200) is installed. AD must be HIGHER than the primary protocol's AD."},
+{cat:"Static Routing",q:"A host route is a static route with which subnet mask?",opts:["/32 — 255.255.255.255","/30 — 255.255.255.252","/0 — 0.0.0.0","/24 — 255.255.255.0"],ans:0,exp:"A host route uses /32 (255.255.255.255) — matches exactly ONE IP address. Used for routing to a specific device (loopback, management IP, server). Example: 'ip route 10.5.5.5 255.255.255.255 10.1.1.2'"},
+{cat:"Static Routing",hot:1,q:"When configuring a static route over an Ethernet interface, what is the recommended best practice?",opts:["Specify only the exit interface","Specify only the next-hop IP","Specify BOTH the exit interface AND the next-hop IP","Use a wildcard mask instead of subnet mask"],ans:2,exp:"On Ethernet (multi-access) links, always specify BOTH: 'ip route 10.x.x.x mask [exit-int] [next-hop]'. Exit interface alone causes the router to ARP for EVERY destination IP (proxy ARP issue). Next-hop alone works but exit-int+next-hop is cleanest."},
+{cat:"Static Routing",q:"Which IPv6 command creates a default route via next-hop 2001:DB8:1::1?",opts:["ipv6 route 0::/0 2001:DB8:1::1","ipv6 route ::/0 2001:DB8:1::1","ip route ::/0 2001:DB8:1::1","ipv6 default-route 2001:DB8:1::1"],ans:1,exp:"IPv6 default route: 'ipv6 route ::/0 [next-hop]'. The ::/0 is the IPv6 equivalent of 0.0.0.0/0. All bits are zero — matches every IPv6 destination. Requires 'ipv6 unicast-routing' to be enabled."},
+{cat:"Static Routing",q:"An IPv6 static route uses a link-local address as the next-hop. What additional parameter is required?",opts:["The VLAN ID","The exit interface","The router ID","The subnet mask"],ans:1,exp:"Link-local addresses (FE80::/10) are not globally unique — the same FE80:: address could exist on multiple interfaces. When using a link-local next-hop, you MUST specify the exit interface: 'ipv6 route 2001:DB8:2::/64 Gi0/0 FE80::2'"},
+{cat:"Static Routing",q:"Which command verifies that a static route to 10.3.3.0/24 was successfully installed?",opts:["show ip protocols","show ip route 10.3.3.0","show ip static route","show running-config | include route"],ans:1,exp:"'show ip route 10.3.3.0' shows the routing table entry for that specific network. If installed, you'll see 'S 10.3.3.0/24 [1/0] via [next-hop]'. The [1/0] = AD 1 / metric 0 confirms it's a static route."},
+{cat:"Static Routing",q:"A static route shows [1/0] in the routing table. What does the '0' represent?",opts:["The VLAN number","The metric (cost) — static routes always have metric 0","The number of hops","The exit interface number"],ans:1,exp:"[AD/Metric] = [1/0]. Static routes have metric=0 because there's no routing protocol calculating a cost. The metric for static routes is always 0. The AD=1 means static routes are highly trusted (only connected=0 is more trusted)."},
+{cat:"Static Routing",q:"What happens if you configure a static route to a next-hop that is not reachable?",opts:["The router installs it anyway — static routes are always installed","The router rejects the configuration","The route is installed but traffic is blackholed (dropped silently)","The router uses OSPF as backup automatically"],ans:2,exp:"Static routes pointing to unreachable next-hops create 'blackholes' — the router installs the route (it doesn't check reachability by default) and silently drops traffic. Use 'ip route 10.x.x.x ... track [number]' with IP SLA to detect failures."},
+// ── OSPFv2 ─────────────────────────────────────────────────────────────────
+{cat:"OSPFv2",hot:1,q:"What is the default Administrative Distance for OSPF?",opts:["90","100","110","120"],ans:2,exp:"OSPF AD = 110. Remember: EIGRP=90, OSPF=110, RIP=120. 'Every Old Router' = 90, 110, 120. Lower AD = more trusted. If both EIGRP and OSPF know a route, EIGRP (90) wins."},
+{cat:"OSPFv2",hot:1,q:"OSPF uses which algorithm to calculate the best path?",opts:["Bellman-Ford","Dijkstra SPF (Shortest Path First)","Distance Vector","DUAL"],ans:1,exp:"OSPF uses Dijkstra's SPF (Shortest Path First) algorithm. Each router has a complete map (LSDB) of the network and runs SPF locally to find the shortest (lowest cost) path to every destination. This makes OSPF a link-state protocol."},
+{cat:"OSPFv2",hot:1,q:"What is the OSPF metric called and how is it calculated by default?",opts:["Hop count","Bandwidth — higher bandwidth = better metric","Cost = 100,000,000 / interface bandwidth","Delay + bandwidth combined"],ans:2,exp:"OSPF metric = Cost = 10^8 (100,000,000) / interface bandwidth (bps). FastEthernet (100Mbps) = 1. GigabitEthernet (1Gbps) = 1 (same problem!). Fix: 'auto-cost reference-bandwidth 10000' makes 1G=10, 10G=1."},
+{cat:"OSPFv2",hot:1,q:"Which command fixes the OSPF cost calculation issue where FastEthernet and GigabitEthernet have the same cost?",opts:["ip ospf cost 100","auto-cost reference-bandwidth 10000","ospf bandwidth 10000","ip ospf bandwidth 1000"],ans:1,exp:"'auto-cost reference-bandwidth 10000' (under 'router ospf') sets the reference to 10,000 Mbps (10Gbps). New costs: 100M=100, 1G=10, 10G=1. MUST be set identically on ALL OSPF routers or SPF calculations will be inconsistent."},
+{cat:"OSPFv2",hot:1,q:"What is the OSPF Router ID (RID) and how is it selected if not manually configured?",opts:["The highest IP address on any interface","The lowest MAC address on any interface","Highest IP on loopback interfaces; if none, highest IP on any active interface","The IP address of the management interface"],ans:2,exp:"OSPF RID selection order: (1) Manually configured 'router-id X.X.X.X' (best practice), (2) Highest IP on any UP loopback interface, (3) Highest IP on any UP physical interface. Always configure manually for stability — loopbacks never go down."},
+{cat:"OSPFv2",hot:1,q:"Two OSPF routers are stuck in EXSTART state. What is the MOST likely cause?",opts:["Mismatched area IDs","Mismatched MTU values","Mismatched hello timers","Passive interface configured"],ans:1,exp:"ExStart/Exchange state stall = MTU mismatch. OSPF includes MTU in DBD packets. If MTUs differ (e.g., one side 1500, other 1476), they can't synchronize databases. Fix: match MTU on both sides, or 'ip ospf mtu-ignore' on both interfaces."},
+{cat:"OSPFv2",hot:1,q:"On a broadcast (Ethernet) network, OSPF elects which two special routers?",opts:["Primary and Secondary Router","Master and Slave Router","DR (Designated Router) and BDR (Backup Designated Router)","Active and Standby Router"],ans:2,exp:"On multi-access (broadcast) networks, OSPF elects DR and BDR to reduce LSA flooding. Without DR/BDR, every router floods to every other = N×(N-1) adjacencies. With DR/BDR, all routers form FULL adjacency only with DR and BDR."},
+{cat:"OSPFv2",hot:1,q:"How is the OSPF DR elected on a broadcast segment?",opts:["Highest Router ID wins","Lowest priority wins, then lowest Router ID","Highest OSPF priority wins (default=1); tie broken by highest Router ID","Random selection"],ans:2,exp:"DR election: (1) Highest OSPF priority (0-255, default=1) wins. (2) If tie, highest Router ID wins. Priority 0 = never becomes DR or BDR. Election is NON-PREEMPTIVE — once elected, DR keeps the role even if a higher-priority router joins later."},
+{cat:"OSPFv2",hot:1,q:"What OSPF neighbor state do non-DR/BDR routers (DROther) reach with EACH OTHER on a broadcast network?",opts:["Full","Loading","2-Way","ExStart"],ans:2,exp:"On broadcast networks: DROther routers reach FULL adjacency ONLY with DR and BDR. With each other (DROther-to-DROther), they only reach 2-Way state. 'show ip ospf neighbor' shows '2WAY/DROTHER' for these relationships — this is NORMAL."},
+{cat:"OSPFv2",hot:1,q:"Which command adds ALL interfaces to OSPF area 0 using a single network statement?",opts:["network area 0","network 0.0.0.0 0.0.0.0 area 0","network 255.255.255.255 0.0.0.0 area 0","ospf area 0 all-interfaces"],ans:1,exp:"'network 0.0.0.0 255.255.255.255 area 0' — the 0.0.0.0 network with 255.255.255.255 wildcard matches ALL IP addresses on ALL interfaces. This adds every interface to OSPF area 0. Then use 'passive-interface' to exclude interfaces facing end users."},
+{cat:"OSPFv2",q:"What is the purpose of the 'passive-interface' command in OSPF?",opts:["Completely removes the interface from OSPF","Stops OSPF hellos on the interface but still advertises the connected network","Blocks all traffic on the interface","Makes the interface a backup path"],ans:1,exp:"'passive-interface Gi0/1' stops OSPF from SENDING hello packets on that interface (no adjacency formed with anything connected to it), but the network on that interface IS STILL ADVERTISED in OSPF LSAs. Use on LAN-facing ports with only end devices."},
+{cat:"OSPFv2",hot:1,q:"What are the OSPF hello and dead timer defaults on an Ethernet broadcast interface?",opts:["Hello 30s / Dead 120s","Hello 10s / Dead 40s","Hello 5s / Dead 20s","Hello 60s / Dead 240s"],ans:1,exp:"Ethernet (broadcast network): Hello=10 seconds, Dead=40 seconds (4× hello). NBMA networks: Hello=30s, Dead=120s. CRITICAL: hello AND dead timers must MATCH on both neighbors or the adjacency won't form. Check with 'show ip ospf interface'."},
+{cat:"OSPFv2",q:"'Show ip ospf neighbor' shows neighbor 2.2.2.2 in FULL/DR state. What does this mean?",opts:["This router is the DR","Neighbor 2.2.2.2 is the DR and adjacency is fully established","The neighbor is down","The router lost DR election"],ans:1,exp:"FULL = fully adjacent (database synchronized). DR = the neighbor 2.2.2.2 is the Designated Router on this segment. This is the desired state on broadcast networks — FULL adjacency with DR and BDR. '2WAY/DROTHER' is normal for non-DR/BDR peers."},
+{cat:"OSPFv2",q:"Which command distributes the default route into OSPF so all OSPF routers learn it?",opts:["ip route 0.0.0.0 0.0.0.0 ospf","default-information originate","redistribute default ospf","ospf default-route propagate"],ans:1,exp:"'default-information originate' (under 'router ospf') redistributes the local default route into OSPF. All other OSPF routers receive an External LSA and install a default route pointing to this router. The router must have a default route OR add 'always' keyword."},
+{cat:"OSPFv2",hot:1,q:"Which multicast address do ALL OSPF routers listen on?",opts:["224.0.0.1","224.0.0.2","224.0.0.5","224.0.0.6"],ans:2,exp:"224.0.0.5 = All OSPF routers multicast (AllSPFRouters). 224.0.0.6 = DR/BDR only (AllDRouters). OSPF hellos and LSAs are sent to 224.0.0.5. Updates to DR/BDR use 224.0.0.6. Non-OSPF routers ignore both."},
+{cat:"OSPFv2",q:"An OSPF interface has priority set to 0. What does this mean?",opts:["This router becomes the DR","This router becomes the BDR","This router cannot become DR or BDR","This router has the highest priority"],ans:2,exp:"OSPF priority 0 = ineligible for DR/BDR election. The router will always be a DROther on that segment. Used deliberately on routers you don't want as DR (e.g., routers with high load or that are not well-connected to all segment members)."},
+{cat:"OSPFv2",q:"Which OSPF neighbor state indicates that both routers have synchronized their Link State Databases?",opts:["2-Way","Exchange","Loading","Full"],ans:3,exp:"FULL state = OSPF neighbor relationship is completely established. Both routers have identical LSDBs (Link State Databases). This is the GOAL state. On broadcast networks, FULL is only between DR/BDR pairs. On P2P links, FULL is between both routers."},
+{cat:"OSPFv2",q:"What is the OSPF network type on a point-to-point serial link?",opts:["Broadcast","Non-Broadcast Multi-Access (NBMA)","Point-to-point — no DR/BDR election","Loopback"],ans:2,exp:"Point-to-point network type: no DR/BDR election (only 2 routers). Both routers form FULL adjacency directly. Hello=10s, Dead=40s. More efficient than broadcast type for serial links."},
+{cat:"OSPFv2",hot:1,q:"What are the four most common reasons OSPF neighbors FAIL to form adjacency?",opts:["Wrong passwords, wrong VLAN, wrong IP, wrong MAC","Mismatched area ID, mismatched hello/dead timers, mismatched subnet/mask, passive-interface on transit link","Wrong router ID, wrong cost, wrong priority, wrong MTU","Wrong process ID, wrong bandwidth, wrong duplex, wrong ACL"],ans:1,exp:"Top OSPF neighbor failure causes: (1) Mismatched area numbers, (2) Mismatched hello/dead timers, (3) Interface not in same subnet, (4) passive-interface on the transit link. Also: MTU mismatch (ExStart stall), authentication mismatch, ACL blocking OSPF (protocol 89)."},
+{cat:"OSPFv2",q:"OSPF process ID 1 on R1 and process ID 2 on R2 — can they become neighbors?",opts:["No — process IDs must match","Yes — OSPF process ID is locally significant only","No — different processes use different ports","Yes — but only if area IDs also differ"],ans:1,exp:"OSPF process ID is LOCAL ONLY — it's not exchanged in OSPF packets. R1 running 'router ospf 1' and R2 running 'router ospf 2' can form neighbors without issue. The area ID and other parameters must match, but NOT the process ID."},
+{cat:"OSPFv2",q:"Which command manually sets the OSPF cost on an interface to 50?",opts:["ip ospf bandwidth 50","ip ospf cost 50","ospf cost interface 50","bandwidth 50000"],ans:1,exp:"'ip ospf cost 50' (under interface config) manually overrides the auto-calculated cost. This is the most direct way to influence OSPF path selection. Manual cost overrides 'auto-cost reference-bandwidth' for that specific interface."},
+{cat:"OSPFv2",q:"A router has 'auto-cost reference-bandwidth 10000' configured. What is the OSPF cost for a 100 Mbps FastEthernet interface?",opts:["1","10","100","1000"],ans:2,exp:"Cost = reference-bandwidth / interface-bandwidth = 10,000 Mbps / 100 Mbps = 100. With default reference (100 Mbps), FE cost = 1. With 10,000 Mbps reference: 100M=100, 1G=10, 10G=1. Much better differentiation between speeds."},
+{cat:"OSPFv2",q:"Which OSPF command shows the Link State Database (LSDB)?",opts:["show ip ospf neighbor","show ip ospf database","show ip route ospf","show ip ospf topology"],ans:1,exp:"'show ip ospf database' displays the LSDB — all LSAs known to this router. Used to verify that all networks are being advertised and that routers have consistent databases. Each router in an area should have identical LSDBs."},
+{cat:"OSPFv2",q:"What does 'default-information originate always' do differently from 'default-information originate'?",opts:["They are identical","'always' advertises the default route even if this router doesn't have one","'always' increases the AD of the advertised route","'always' sends updates more frequently"],ans:1,exp:"'default-information originate' only advertises into OSPF if this router has a default route in its table. 'default-information originate always' advertises it REGARDLESS of whether a default route exists locally. Used for testing or specific designs."},
+// ── FHRP ───────────────────────────────────────────────────────────────────
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"What problem do First Hop Redundancy Protocols (FHRPs) solve?",opts:["Routing loops in large networks","Single point of failure at the default gateway — if the gateway fails, hosts lose connectivity","Slow convergence in OSPF","Duplicate IP addresses on a LAN"],ans:1,exp:"Hosts have a STATIC default gateway IP. If that router fails, ALL hosts lose internet/inter-VLAN access even if a second router is available. FHRPs (HSRP, VRRP, GLBP) create a VIRTUAL IP shared between routers — if the active router fails, the standby takes over the virtual IP seamlessly."},
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"In HSRP, which router actively forwards traffic for the virtual IP?",opts:["The Standby router","The Active router","Both routers simultaneously","The router with the lowest IP"],ans:1,exp:"HSRP Active router = the one currently owning the virtual IP and forwarding traffic. Standby router = monitors the Active via hello messages, ready to take over instantly if Active fails. Only ONE router forwards at a time in HSRP."},
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"How is the HSRP Active router determined?",opts:["Lowest IP address","Lowest MAC address","Highest HSRP priority (default 100); tie = highest real IP address","Lowest HSRP group number"],ans:2,exp:"HSRP election: highest priority wins (default=100). If priorities tie, highest real interface IP address wins. Set priority with 'standby [group] priority [value]'. Higher priority router becomes Active."},
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"R1 is the HSRP Active router. R1 recovers after a failure. R2 is currently Active. What is required for R1 to reclaim the Active role?",opts:["HSRP automatically fails back to R1","R1 must have 'standby 1 preempt' configured","R2 must be manually reloaded","R1 must have a lower IP address"],ans:1,exp:"HSRP preemption is DISABLED by default. Without 'standby 1 preempt', R1 won't take back Active even if it has higher priority. R2 stays Active until it fails or is reloaded. 'standby 1 preempt' allows the higher-priority router to reclaim Active role."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"Which FHRP supports load balancing by allowing multiple routers to SIMULTANEOUSLY forward traffic?",opts:["HSRP","VRRP","GLBP","All FHRPs support simultaneous forwarding"],ans:2,exp:"GLBP (Gateway Load Balancing Protocol) — Cisco proprietary — allows ALL routers in the group to actively forward traffic. AVG (Active Virtual Gateway) assigns different virtual MACs to each router (AVF). True load balancing. HSRP and VRRP have only ONE active forwarder."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"What is the HSRP virtual MAC address format?",opts:["0000.0C07.ACxx (where xx = group number in hex)","0000.5E00.01xx","0007.B400.xxyy","FF:FF:FF:FF:FF:FF"],ans:0,exp:"HSRP v1 virtual MAC: 0000.0C07.ACxx (xx = group number in hex). HSRP v2: 0000.0C9F.Fxxx. VRRP: 0000.5E00.01xx. GLBP: 0007.B400.xxyy. Hosts use this virtual MAC as the gateway MAC — it doesn't change when failover occurs."},
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"Which FHRP is an open IEEE standard (not Cisco proprietary)?",opts:["HSRP","GLBP","VRRP","All are open standards"],ans:2,exp:"VRRP (Virtual Router Redundancy Protocol) = IEEE 802.1 — open standard, supported by multiple vendors. HSRP and GLBP are Cisco proprietary. VRRP terminology: Master (=Active) and Backup (=Standby). VRRP preemption is ENABLED by default (unlike HSRP)."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"An HSRP configuration has 'standby 1 track GigabitEthernet0/1 30'. What does this do?",opts:["Tracks OSPF neighbor state","Reduces this router's HSRP priority by 30 if Gi0/1 goes down","Increases priority by 30 if Gi0/1 comes up","Monitors Gi0/1 for BPDU receipt"],ans:1,exp:"Interface tracking: if the tracked interface (Gi0/1 — usually the WAN/uplink) goes down, HSRP priority is reduced by 30. If this drops the priority below the standby router's priority (and preempt is enabled), the standby takes over as Active. Intelligent failover."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"What are the HSRP states a router goes through? (correct order)",opts:["Up → Active → Standby → Down","Initial → Learn → Listen → Speak → Standby → Active","Init → Speak → Active → Standby","Blocked → Listening → Learning → Forwarding"],ans:1,exp:"HSRP states in order: Initial (starting up) → Learn (waiting for virtual IP info) → Listen (knows VIP, listening for hellos) → Speak (sending hellos, participating in election) → Standby (backup, monitoring active) → Active (forwarding traffic)."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"Which command verifies HSRP status showing active/standby roles and the virtual IP?",opts:["show hsrp","show standby brief","show ip redundancy","show fhrp group"],ans:1,exp:"'show standby brief' displays a concise one-line summary per group: interface, group, priority, state (Active/Standby/Init), virtual IP, active router IP, standby router IP. 'show standby' gives full detail including timers and tracking."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"HSRP version 2 offers which advantage over version 1?",opts:["Faster convergence","More groups (0-4095 vs 0-255), millisecond timers, different multicast address","Better encryption","IPv4 only support"],ans:1,exp:"HSRPv2 improvements over v1: (1) Groups 0-4095 (v1 limited to 0-255), (2) Millisecond hello/hold timers for faster failover, (3) Different multicast (224.0.0.102 vs 224.0.0.2), (4) IPv6 support. Always use v2 for new deployments."},
+// ── SCENARIO / TROUBLESHOOTING ────────────────────────────────────────────
+{cat:"Scenario: IP Connectivity",hot:1,q:"R1 and R2 are connected. OSPF is configured but 'show ip ospf neighbor' shows empty. Area IDs match. What should you check next?",opts:["Check VLAN config","Verify hello/dead timers match and passive-interface is NOT on the transit link","Check spanning tree","Check DHCP config"],ans:1,exp:"After confirming area IDs match, check: (1) 'show ip ospf interface Gi0/0' — verify hello/dead timers match on both sides (10/40 default for Ethernet). (2) Is passive-interface configured on the transit link? 'passive-interface' stops hellos. These cause ~80% of OSPF neighbor failures."},
+{cat:"Scenario: IP Connectivity",hot:1,q:"A network has primary route via OSPF (AD 110). A floating static with AD 200 is configured as backup. OSPF fails. What appears in the routing table?",opts:["Nothing — no route available","The floating static route (AD 200) is now installed","OSPF still shows the route","Both static and OSPF routes appear"],ans:1,exp:"When the OSPF route disappears (link failure), the floating static (AD 200) is now the ONLY route to that destination — it 'floats' up from the RIB (Routing Information Base) into the active routing table. Traffic continues via the backup path."},
+{cat:"Scenario: IP Connectivity",q:"Hosts in 192.168.1.0/24 can ping their gateway but cannot reach 10.5.5.0/24. The router has a route to 10.5.5.0/24. What is the MOST likely issue?",opts:["OSPF is not running","The return path is missing — 10.5.5.0 network has no route back to 192.168.1.0/24","The gateway IP is wrong","STP is blocking the path"],ans:1,exp:"Asymmetric routing / missing return route. Packets reach 10.5.5.0/24 but the reply has no route back to 192.168.1.0/24. Always verify routing is BIDIRECTIONAL. Check routing on the far-end router too."},
+{cat:"Scenario: IP Connectivity",hot:1,q:"'traceroute 10.5.5.1' shows: 1ms, 2ms, * * * (timeout at hop 3). What does this indicate?",opts:["The destination is unreachable — no route","Hop 3 is dropping ICMP or the route beyond hop 3 is missing","The default route is wrong","OSPF has not converged"],ans:1,exp:"'* * *' at hop 3 means either: (1) Hop 3's router is blocking ICMP (common in prod networks), (2) No route beyond hop 3 — packets arrive but return path is broken. The connection fails AT or AFTER hop 3. Use ping with extended options to further test."},
+{cat:"Scenario: IP Connectivity",q:"R1 has two equal-cost OSPF paths to 10.10.10.0/24 via Gi0/0 and Gi0/1. What does the routing table show?",opts:["Only one path — OSPF picks the one with lower next-hop IP","Both paths installed — ECMP load balancing","The path with lower interface number wins","OSPF installs only one path per prefix"],ans:1,exp:"OSPF installs up to 4 (default) equal-cost paths via ECMP. Both routes appear in the table: 'O 10.10.10.0/24 [110/10] via X, Gi0/0' and '[110/10] via Y, Gi0/1'. Traffic is load-balanced. Change max paths with 'maximum-paths' under router ospf."},
+{cat:"Scenario: IP Connectivity",hot:1,q:"After configuring OSPF, the expected route is missing from 'show ip route'. The interface is up/up. What is the MOST likely cause?",opts:["Wrong hostname","The network statement wildcard mask doesn't match the interface's IP","Wrong duplex setting","Missing VLAN config"],ans:1,exp:"Most common: the 'network' statement doesn't match the interface IP. Example: 'network 10.1.1.0 0.0.0.255 area 0' won't match interface 10.2.2.1. Verify with 'show ip ospf interface' — if the interface isn't listed, the network statement missed it."},
+{cat:"Scenario: IP Connectivity",q:"Which command shows the OSPF process ID, router ID, area, and timers for a specific interface?",opts:["show ip ospf neighbor","show ip ospf interface GigabitEthernet0/0","show ip protocols","show ip route ospf"],ans:1,exp:"'show ip ospf interface Gi0/0' shows: OSPF process, area, cost, network type, DR/BDR addresses, hello/dead timers, and neighbor count. This is the BEST single command to troubleshoot OSPF interface issues."},
+{cat:"Scenario: IP Connectivity",q:"A static route to 10.1.1.0/24 via 192.168.1.1 is configured but traffic is being routed via OSPF instead. Why?",opts:["Static routes are disabled","OSPF has a more specific (longer prefix) match","The static route's next-hop 192.168.1.1 is unreachable — route not installed","Static routes require 'no shutdown'"],ans:2,exp:"If the static route's next-hop (192.168.1.1) is unreachable (not in routing table), the static route is NOT installed — Cisco IOS requires recursive lookup to succeed. OSPF route works because its next-hop is reachable. Fix: ensure 192.168.1.1 is reachable."},
+{cat:"Scenario: IP Connectivity",hot:1,q:"HSRP is configured. The active router (R1, priority 110) fails. R2 (priority 100) takes over. R1 recovers but R2 is still active. What is missing?",opts:["Virtual IP configuration","'standby 1 preempt' on R1","Higher priority on R2","VRRP instead of HSRP"],ans:1,exp:"'standby 1 preempt' is missing on R1. Without preempt, HSRP doesn't automatically restore the higher-priority router as Active after recovery. R2 stays Active indefinitely. Add 'standby 1 preempt' to R1's HSRP config."},
+// ── ROUTING TABLE READING ──────────────────────────────────────────────────
+{cat:"Routing Table",hot:1,q:"Which entry in a routing table is ALWAYS used when no other route matches?",opts:["The route with lowest metric","The route with lowest AD","0.0.0.0/0 — the default route","The connected route"],ans:2,exp:"0.0.0.0/0 matches ALL destinations (prefix length 0 = least specific). Since longest-prefix match is used, any more-specific route wins over the default. The default route is the 'match anything' catch-all — used only when nothing else matches."},
+{cat:"Routing Table",q:"What does the 'L' route code mean in 'show ip route'?",opts:["Local — the router's own interface IP address (/32 host route)","Loop — a routing loop detected","LISP route","Legacy protocol route"],ans:0,exp:"L = Local route — added in IOS 15+. Represents the router's OWN IP address as a /32 host route. This tells the router 'this exact IP address is ME.' Allows the router to process packets destined for its own interfaces efficiently."},
+{cat:"Routing Table",q:"A routing table shows 'S* 0.0.0.0/0 [1/0] via 10.0.0.1'. The * symbol indicates:",opts:["The route is unreachable","This is a candidate default route (gateway of last resort)","The route was learned via OSPF","The route has the best metric"],ans:1,exp:"The * (asterisk) indicates this is a 'candidate default' route — a route for 0.0.0.0/0 that is being considered as the Gateway of Last Resort. When installed, the router shows 'Gateway of last resort is 10.0.0.1 to network 0.0.0.0'."},
+{cat:"Routing Table",q:"How many routes does IOS install by default for OSPF Equal Cost Multi-Path (ECMP)?",opts:["1","2","4","8"],ans:2,exp:"Default maximum ECMP paths in IOS = 4 (for most protocols). All 4 equal-cost paths are installed simultaneously. Change with 'maximum-paths [1-32]' under 'router ospf'. EIGRP default is also 4, RIP is 4."},
+// ── ADVANCED OSPF ──────────────────────────────────────────────────────────
+{cat:"OSPFv2",q:"Which type of OSPF LSA describes a router's directly connected links and is flooded within a single area?",opts:["Type 1 — Router LSA","Type 2 — Network LSA","Type 3 — Summary LSA","Type 5 — External LSA"],ans:0,exp:"Type 1 (Router LSA): generated by every OSPF router, describes its directly connected links and their costs. Flooded only within the originating area. Every router in an area has Type 1 LSAs for every other router in that area."},
+{cat:"OSPFv2",q:"What command changes the OSPF hello timer to 5 seconds on an interface?",opts:["ip ospf hello 5","ip ospf hello-interval 5","ospf hello-timer 5","timers hello 5"],ans:1,exp:"'ip ospf hello-interval 5' (under interface config) changes the hello timer to 5 seconds. CRITICAL: the dead interval must also be updated — or at least match. Dead interval should be ≥ 4× hello. Also set 'ip ospf dead-interval 20'. MUST match on both neighbor interfaces."},
+{cat:"OSPFv2",q:"'Show ip protocols' for OSPF shows 'Routing for Networks: 10.0.0.0/8'. What does this mean?",opts:["OSPF is advertising only 10.0.0.0 networks","Any interface with an IP in the 10.0.0.0/8 range is participating in OSPF","The router is only receiving routes for 10.0.0.0/8","OSPF process 8 is running"],ans:1,exp:"'Routing for Networks' shows the network statements configured. Any interface whose IP falls within 10.0.0.0/8 (based on the wildcard) will participate in OSPF for the configured area. 'show ip protocols' is great for a quick OSPF config overview."},
+{cat:"OSPFv2",q:"What is a loopback interface and why is it used for OSPF Router ID?",opts:["A physical interface for management only","A virtual interface that never goes down — provides stable RID and network advertisement","A trunk interface for VLANs","An interface for NAT translation"],ans:1,exp:"Loopback interfaces are virtual — they never go down (as long as the router is running). Using a loopback IP as OSPF Router ID ensures OSPF stability — the RID never changes due to interface failures. Always: 'interface loopback 0' + 'ip address 1.1.1.1 255.255.255.255' + 'router-id 1.1.1.1'"},
+// ── FINAL MIXED ────────────────────────────────────────────────────────────
+{cat:"Static Routing",q:"Which command removes a specific static route from the routing table?",opts:["delete ip route 10.1.1.0","no ip route 10.1.1.0 255.255.255.0 10.0.0.1","clear ip route static","ip route 10.1.1.0 255.255.255.0 null0"],ans:1,exp:"'no ip route [network] [mask] [next-hop]' removes the specific static route. The full command including the next-hop must be specified. Just 'no ip route 10.1.1.0 255.255.255.0' may remove all static routes to that network."},
+{cat:"FHRP — HSRP/VRRP/GLBP",q:"What multicast address does HSRP version 1 use for hello messages?",opts:["224.0.0.1","224.0.0.2","224.0.0.5","224.0.0.18"],ans:1,exp:"HSRPv1 hello messages: 224.0.0.2 (all routers multicast). HSRPv2: 224.0.0.102. VRRP: 224.0.0.18. OSPF: 224.0.0.5 (all OSPF), 224.0.0.6 (DR/BDR). Each protocol uses distinct multicast addresses."},
+{cat:"OSPFv2",q:"Which OSPF packet type is used to discover and maintain neighbor relationships?",opts:["DBD (Database Description)","LSR (Link State Request)","LSU (Link State Update)","Hello"],ans:3,exp:"OSPF Hello packets: discover neighbors, establish/maintain adjacencies, elect DR/BDR, verify bidirectional connectivity. Sent periodically (every 10s on Ethernet). Hello contains: Router ID, area ID, hello/dead timers, DR/BDR, neighbor list."},
+{cat:"Routing Table",q:"A network admin types 'show ip route' and sees no default route in the output. A host can't reach the internet. What command creates a default route toward ISP at 203.0.113.1?",opts:["ip default-gateway 203.0.113.1","ip route 0.0.0.0 0.0.0.0 203.0.113.1","ip default-route 203.0.113.1","ip route default 203.0.113.1"],ans:1,exp:"'ip route 0.0.0.0 0.0.0.0 203.0.113.1' creates the default route. Note: 'ip default-gateway' is used on SWITCHES (not routers) to set the gateway for management traffic when IP routing is disabled."},
+{cat:"Forwarding Decision",q:"Which administrative distance would make a static route act as a backup to an EIGRP route?",opts:["AD 80","AD 89","AD 95","AD 100"],ans:2,exp:"EIGRP internal AD = 90. A floating static backup must have AD > 90. AD 95 > 90, so the static route hides behind EIGRP and only activates when EIGRP fails. Common choices: 91-254. Do NOT use AD lower than 90 or it overrides EIGRP."},
+{cat:"OSPFv2",hot:1,q:"'ip ospf 1 area 0' is configured on an interface. What does this achieve?",opts:["Enables OSPF process 1 and adds this specific interface to area 0 — alternative to the 'network' command","Sets the cost to 1 for this interface","Enables DR election on this interface","Disables OSPF on this interface"],ans:0,exp:"Interface-level OSPF config: 'ip ospf [process-id] area [area-id]' directly adds that interface to OSPF. More precise than the 'network' command — activates OSPF on exactly that interface. Preferred method in modern IOS deployments."},
+{cat:"FHRP — HSRP/VRRP/GLBP",hot:1,q:"In HSRP, what IP address should hosts configure as their default gateway?",opts:["The Active router's real interface IP","The Standby router's real interface IP","The Virtual IP address shared by the HSRP group","The highest IP in the subnet"],ans:2,exp:"Hosts MUST use the VIRTUAL IP as their gateway — NOT the real IP of either router. The virtual IP stays constant even during failover. If a host uses the real Active router IP and that router fails, the host loses its gateway even though HSRP switches over."},
+];
+
+let uA={},sub={},cf='all';
+function rl(){
+  const s=document.getElementById('search').value.toLowerCase();
+  const c=document.getElementById('qlist');
+  let h='',prev='';
+  qs.forEach((q,i)=>{
+    if(cf==='correct'&&!(sub[i]&&uA[i]===q.ans))return;
+    if(cf==='wrong'&&!(sub[i]&&uA[i]!==q.ans))return;
+    if(cf==='unattempted'&&sub[i])return;
+    if(s&&!q.q.toLowerCase().includes(s)&&!q.cat.toLowerCase().includes(s)&&!q.exp.toLowerCase().includes(s))return;
+    if(q.cat!==prev){h+=`<div class="cat-header">📌 ${q.cat}</div>`;prev=q.cat;}
+    const iS=sub[i],iC=iS&&uA[i]===q.ans,iW=iS&&uA[i]!==q.ans;
+    let cc='q-card';if(iC)cc+=' answered-correct';if(iW)cc+=' answered-wrong';
+    let badge='';
+    if(iC)badge='<span class="result-badge rb-correct">✓ Correct</span>';
+    else if(iW)badge='<span class="result-badge rb-wrong">✗ Wrong</span>';
+    else if(uA[i]!==undefined)badge='<span class="result-badge" style="background:#e0f2fe;color:#0369a1">Selected</span>';
+    h+=`<div class="${cc}" id="qc${i}">
+      <div class="q-header">
+        <span class="q-num">Q${i+1}${q.hot?'<span class="tag-hot">🔥</span>':''}</span>
+        <span style="flex:1"></span>${badge}
+        <span class="q-category">${q.cat}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">`;
+    ['A','B','C','D'].forEach((L,oi)=>{
+      let cls='opt';
+      if(uA[i]===oi&&!iS)cls+=' selected';
+      if(iS&&oi===q.ans)cls+=' correct-ans';
+      if(iS&&uA[i]===oi&&oi!==q.ans)cls+=' wrong-ans';
+      const d=iS?'style="cursor:default"':`onclick="sel(${i},${oi})"`;
+      h+=`<div class="${cls}" ${d}><span class="opt-letter">${L}</span>${q.opts[oi]}</div>`;
+    });
+    h+=`</div><div class="btn-row">
+      ${!iS?`<button class="btn btn-submit" onclick="sbQ(${i})">Submit</button>`:''}
+      <button class="btn btn-show" onclick="tgE(${i})">Explanation</button>
+      ${iS?`<button class="btn btn-reset-q" onclick="rsQ(${i})">Reset</button>`:''}
+    </div>
+    <div class="explanation" id="ex${i}"><strong>✅ </strong>${q.exp}</div></div>`;
+  });
+  if(!h)h='<div style="padding:20px;text-align:center;color:#888">No matching questions.</div>';
+  c.innerHTML=h;upS();
+}
+function sel(i,o){if(sub[i])return;uA[i]=o;rl();}
+function sbQ(i){if(uA[i]===undefined){alert('Select an answer!');return;}sub[i]=true;rl();}
+function tgE(i){const e=document.getElementById('ex'+i);if(e)e.classList.toggle('show');}
+function rsQ(i){delete uA[i];delete sub[i];rl();}
+function submitAll(){qs.forEach((_,i)=>{if(uA[i]!==undefined)sub[i]=true;});rl();}
+function revealAll(){document.querySelectorAll('.explanation').forEach(e=>e.classList.add('show'));}
+function resetAll(){if(!confirm('Reset all?'))return;uA={};sub={};rl();}
+function showScore(){
+  const tot=qs.length,att=Object.keys(sub).length;
+  const cor=qs.filter((q,i)=>sub[i]&&uA[i]===q.ans).length;
+  const pct=att>0?Math.round(cor/tot*100):0;
+  const g=pct>=90?'🏆 Excellent!':pct>=75?'👍 Good Work!':pct>=60?'📚 Keep Reviewing':'🔄 More Study Needed';
+  const ov=document.createElement('div');ov.className='overlay';ov.onclick=cm;
+  const md=document.createElement('div');md.className='score-modal';
+  md.innerHTML=`<h2>IP Connectivity Score</h2><div class="big">${pct}%</div>
+    <p style="margin:8px 0;font-size:14px">${cor}/${tot} correct</p>
+    <p style="color:#dc2626">Wrong: ${att-cor}</p><p style="color:#6b7280;margin-bottom:12px">Unattempted: ${tot-att}</p>
+    <p style="font-size:16px;font-weight:700;color:#5B3FD4">${g}</p>
+    <button class="gbtn gbtn-primary" style="margin-top:14px" onclick="cm()">Close</button>`;
+  document.body.appendChild(ov);document.body.appendChild(md);window._m=md;window._o=ov;
+}
+function cm(){if(window._m)window._m.remove();if(window._o)window._o.remove();}
+function upS(){
+  const tot=qs.length,att=Object.keys(sub).length;
+  const cor=qs.filter((q,i)=>sub[i]&&uA[i]===q.ans).length;
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-correct').textContent=cor;
+  document.getElementById('s-wrong').textContent=att-cor;
+  document.getElementById('s-unattempted').textContent=tot-att;
+  const pct=att>0?Math.round(cor/tot*100):0;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('prog').style.width=Math.round(att/tot*100)+'%';
+}
+function setFilter(f,btn){cf=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');rl();}
+function applyFilters(){rl();}
+// -----------------------
+
+// Fisher-Yates shuffle
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Shuffle options and fix answer index
+function shuffleQuestions() {
+  qs.forEach(q => {
+    const correctAnswer = q.opts[q.ans];
+
+    const paired = q.opts.map((opt, idx) => ({
+      text: opt,
+      wasCorrect: idx === q.ans
+    }));
+
+    shuffle(paired);
+
+    q.opts = paired.map(x => x.text);
+    q.ans = paired.findIndex(x => x.wasCorrect);
+  });
+
+  shuffle(qs);
+}
+
+// Run once when page loads
+shuffleQuestions();
+
+// -----------------------
+rl();
+</script>
+</body>
+</html>

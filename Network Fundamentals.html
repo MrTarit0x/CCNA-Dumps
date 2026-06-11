@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:transparent;color:var(--fg,#1a1a1a);font-size:13px;padding:10px}
+h1{font-size:15px;color:var(--accent,#5B3FD4);margin-bottom:4px;border-bottom:2px solid var(--accent,#5B3FD4);padding-bottom:6px}
+.stats-bar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.stat{background:var(--surface2,#f0eeff);border-radius:8px;padding:6px 14px;text-align:center;flex:1;min-width:70px}
+.stat .v{font-size:18px;font-weight:800;color:var(--accent,#5B3FD4)}
+.stat .l{font-size:10px;color:#888}
+.stat.correct .v{color:#16a34a}
+.stat.wrong .v{color:#dc2626}
+.stat.skip .v{color:#d97706}
+.progress-wrap{background:#e5e7eb;border-radius:10px;height:10px;margin-bottom:10px}
+.progress-fill{height:10px;border-radius:10px;background:linear-gradient(90deg,#5B3FD4,#1D9E75);transition:width 0.3s}
+.filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.filter-bar input{flex:1;min-width:160px;padding:6px 10px;border-radius:6px;border:1.5px solid var(--accent,#5B3FD4);font-size:12px;background:var(--surface,#f8f8f8);color:var(--fg,#1a1a1a)}
+.filter-btn{padding:5px 12px;border-radius:16px;border:1.5px solid #aaa;background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:#555}
+.filter-btn.active{background:var(--accent,#5B3FD4);color:#fff;border-color:var(--accent,#5B3FD4)}
+.q-card{border:1.5px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden;transition:border-color 0.2s}
+.q-card.answered-correct{border-color:#16a34a}
+.q-card.answered-wrong{border-color:#dc2626}
+.q-header{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px 6px;gap:10px;flex-wrap:wrap}
+.q-num{font-weight:800;color:var(--accent,#5B3FD4);font-size:12px;flex-shrink:0}
+.q-category{font-size:10px;background:var(--accent,#5B3FD4);color:#fff;border-radius:10px;padding:2px 8px;flex-shrink:0}
+.q-text{padding:0 14px 10px;font-weight:600;font-size:13px;line-height:1.5}
+.options{padding:0 14px 10px;display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:7px 12px;border-radius:7px;border:1.5px solid #e5e7eb;cursor:pointer;transition:all 0.15s;line-height:1.4}
+.opt:hover{border-color:var(--accent,#5B3FD4);background:var(--surface2,#f0eeff)}
+.opt.selected{border-color:var(--accent,#5B3FD4);background:var(--surface2,#f0eeff)}
+.opt.correct-ans{border-color:#16a34a;background:#f0fdf4;font-weight:700}
+.opt.wrong-ans{border-color:#dc2626;background:#fef2f2}
+.opt-letter{font-weight:800;color:var(--accent,#5B3FD4);flex-shrink:0;width:16px}
+.opt.correct-ans .opt-letter{color:#16a34a}
+.opt.wrong-ans .opt-letter{color:#dc2626}
+.explanation{margin:0 14px 12px;padding:10px 12px;border-radius:7px;background:var(--surface2,#f0faf8);border-left:4px solid #1D9E75;font-size:12px;line-height:1.6;display:none}
+.explanation.show{display:block}
+.explanation strong{color:#1D9E75}
+.btn-row{display:flex;gap:8px;padding:0 14px 12px;flex-wrap:wrap}
+.btn{padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+.btn-submit{background:var(--accent,#5B3FD4);color:#fff}
+.btn-submit:hover{opacity:0.85}
+.btn-show{background:#1D9E75;color:#fff}
+.btn-show:hover{opacity:0.85}
+.btn-reset-q{background:#e5e7eb;color:#555}
+.result-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.rb-correct{background:#dcfce7;color:#16a34a}
+.rb-wrong{background:#fee2e2;color:#dc2626}
+.global-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.gbtn{padding:6px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700}
+.gbtn-primary{background:var(--accent,#5B3FD4);color:#fff}
+.gbtn-green{background:#16a34a;color:#fff}
+.gbtn-red{background:#dc2626;color:#fff}
+.gbtn-gray{background:#6b7280;color:#fff}
+.tag-hot{background:#e05a2b;color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;margin-left:4px}
+.cat-header{background:var(--surface2,#f0eeff);padding:6px 14px;font-weight:700;font-size:12px;color:var(--accent,#5B3FD4);border-bottom:1px solid #e5e7eb;letter-spacing:0.5px}
+.score-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.3);z-index:100;text-align:center;min-width:280px;max-width:90vw}
+.score-modal h2{font-size:22px;margin-bottom:8px;color:var(--accent,#5B3FD4)}
+.score-modal .big{font-size:48px;font-weight:900;color:var(--accent,#5B3FD4)}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:99}
+</style>
+</head>
+<body>
+<h1>🎯 CCNA Network Fundamentals — 100 Exam MCQs</h1>
+<div class="stats-bar">
+  <div class="stat"><div class="v" id="s-total">100</div><div class="l">Total</div></div>
+  <div class="stat correct"><div class="v" id="s-correct">0</div><div class="l">Correct</div></div>
+  <div class="stat wrong"><div class="v" id="s-wrong">0</div><div class="l">Wrong</div></div>
+  <div class="stat skip"><div class="v" id="s-unattempted">100</div><div class="l">Remaining</div></div>
+  <div class="stat"><div class="v" id="s-pct">0%</div><div class="l">Score</div></div>
+</div>
+<div class="progress-wrap"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div class="filter-bar">
+  <input type="text" id="search" placeholder="🔍 Search questions..." oninput="applyFilters()">
+  <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('unattempted',this)">Remaining</button>
+  <button class="filter-btn" onclick="setFilter('correct',this)">✓ Correct</button>
+  <button class="filter-btn" onclick="setFilter('wrong',this)">✗ Wrong</button>
+</div>
+<div class="global-btns">
+  <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All Answers</button>
+  <button class="gbtn gbtn-green" onclick="revealAllExplanations()">Show All Explanations</button>
+  <button class="gbtn gbtn-gray" onclick="resetAll()">Reset Quiz</button>
+  <button class="gbtn gbtn-red" onclick="showScore()">📊 Show Score</button>
+</div>
+<div id="qlist"></div>
+
+<script>
+const qs = [
+// OSI & TCP/IP
+{cat:"OSI & TCP/IP",hot:true,q:"Which layer of the OSI model is responsible for end-to-end communication, error recovery, and flow control?",opts:["Network layer","Data Link layer","Transport layer","Session layer"],ans:2,exp:"The Transport layer (Layer 4) provides end-to-end communication, segmentation, error recovery (TCP), and flow control (windowing). TCP and UDP operate here."},
+{cat:"OSI & TCP/IP",hot:true,q:"A network engineer needs to identify the PDU (Protocol Data Unit) used at the Data Link layer. Which PDU is correct?",opts:["Segment","Packet","Frame","Bit"],ans:2,exp:"Data Link layer (Layer 2) PDU = Frame. Transport=Segment, Network=Packet, Physical=Bit. Memory trick: 'Some People Fear Birthdays' = Segment, Packet, Frame, Bit (Layer 4,3,2,1)."},
+{cat:"OSI & TCP/IP",q:"Which layer of the OSI model is responsible for logical addressing and routing of packets?",opts:["Layer 2 – Data Link","Layer 3 – Network","Layer 4 – Transport","Layer 5 – Session"],ans:1,exp:"Layer 3 (Network) handles logical addressing (IP addresses) and routing decisions. Routers operate at this layer."},
+{cat:"OSI & TCP/IP",hot:true,q:"Which TCP/IP model layer maps to OSI layers 5, 6, and 7?",opts:["Transport","Internet","Network Access","Application"],ans:3,exp:"The TCP/IP Application layer combines OSI layers 5 (Session), 6 (Presentation), and 7 (Application). HTTP, DNS, DHCP, FTP all live here."},
+{cat:"OSI & TCP/IP",q:"At which OSI layer does a switch primarily operate?",opts:["Layer 1","Layer 2","Layer 3","Layer 4"],ans:1,exp:"A standard (Layer 2) switch operates at the Data Link layer — it uses MAC addresses to make forwarding decisions. A Layer 3 switch also operates at the Network layer."},
+{cat:"OSI & TCP/IP",q:"Which device operates at all seven layers of the OSI model?",opts:["Switch","Router","Firewall","Host/End device"],ans:3,exp:"End hosts (PCs, servers) implement all 7 OSI layers — they originate and terminate full application conversations. Routers=L3, Switches=L2."},
+// TCP vs UDP
+{cat:"TCP vs UDP",hot:true,q:"A network administrator wants to ensure reliable delivery of data with error checking and retransmission. Which protocol should be used?",opts:["UDP","ICMP","TCP","OSPF"],ans:2,exp:"TCP (Transmission Control Protocol) provides reliable, ordered, error-checked delivery with acknowledgments and retransmission. UDP is best-effort with no guarantee."},
+{cat:"TCP vs UDP",hot:true,q:"Which application would MOST likely use UDP instead of TCP?",opts:["File transfer (FTP)","Web browsing (HTTP)","VoIP phone call","Email (SMTP)"],ans:2,exp:"VoIP uses UDP because low latency is more important than reliability. A slightly dropped packet causes a click — waiting for retransmission would cause worse audio quality. FTP, HTTP, SMTP all need reliable TCP."},
+{cat:"TCP vs UDP",hot:true,q:"What is the correct sequence of the TCP three-way handshake?",opts:["SYN → ACK → SYN-ACK","SYN → SYN-ACK → ACK","ACK → SYN → SYN-ACK","SYN-ACK → SYN → ACK"],ans:1,exp:"TCP three-way handshake: Client sends SYN → Server replies SYN-ACK → Client sends ACK. This establishes a connection before data transfer begins."},
+{cat:"TCP vs UDP",q:"Which statement about UDP is TRUE?",opts:["UDP performs a three-way handshake before data transfer","UDP guarantees packet delivery","UDP provides lower overhead than TCP","UDP uses sequence numbers for ordering"],ans:2,exp:"UDP has no handshake, no acknowledgments, no sequencing — just raw fast delivery. Lower overhead means less processing, which is why streaming and DNS use it."},
+{cat:"TCP vs UDP",q:"Which protocol uses BOTH TCP and UDP on port 53?",opts:["DHCP","NTP","DNS","TFTP"],ans:2,exp:"DNS uses UDP port 53 for standard queries (fast, small responses) and TCP port 53 for zone transfers and large responses that exceed 512 bytes."},
+{cat:"TCP vs UDP",hot:true,q:"What mechanism does TCP use to control the rate of data transmission to prevent overwhelming the receiver?",opts:["Sequencing","Windowing (flow control)","Checksum","Multiplexing"],ans:1,exp:"TCP windowing (flow control) controls transmission rate. The receiver advertises a window size — how many bytes it can accept before requiring an ACK. This prevents buffer overflow."},
+// Port Numbers
+{cat:"Port Numbers",hot:true,q:"An administrator wants to transfer a file securely using FTP's command channel. Which port number is used?",opts:["Port 20","Port 21","Port 22","Port 23"],ans:1,exp:"FTP uses port 21 for control (commands) and port 20 for data transfer in active mode. Port 22=SSH, Port 23=Telnet."},
+{cat:"Port Numbers",hot:true,q:"Which port number is used by HTTPS?",opts:["Port 80","Port 443","Port 8080","Port 8443"],ans:1,exp:"HTTPS (HTTP Secure) uses TCP port 443. HTTP uses port 80. HTTPS encrypts traffic using TLS/SSL."},
+{cat:"Port Numbers",hot:true,q:"A DHCP client sends a broadcast to discover a DHCP server. Which source and destination port numbers are used?",opts:["Source 68, Destination 67","Source 67, Destination 68","Source 69, Destination 67","Source 68, Destination 69"],ans:0,exp:"DHCP client sends from source port 68 to destination port 67 (server). Server responds from port 67 to port 68. Memory: Client=68 (comes AFTER server=67)."},
+{cat:"Port Numbers",q:"Which protocol uses UDP port 69?",opts:["FTP","SFTP","TFTP","Telnet"],ans:2,exp:"TFTP (Trivial File Transfer Protocol) uses UDP port 69. It's used for simple file transfers like IOS images — no authentication, no directory listing, just get/put."},
+{cat:"Port Numbers",hot:true,q:"What port does SSH use by default?",opts:["Port 21","Port 22","Port 23","Port 443"],ans:1,exp:"SSH (Secure Shell) uses TCP port 22. It provides encrypted remote management. Telnet (unencrypted) uses port 23."},
+{cat:"Port Numbers",q:"Which port does SNMP use to receive polling requests from the NMS?",opts:["UDP 161","UDP 162","TCP 49","TCP 514"],ans:0,exp:"SNMP agents listen on UDP 161 for Get/Set requests from the NMS. SNMP traps/informs go from agent to NMS on UDP 162."},
+{cat:"Port Numbers",q:"Syslog messages are sent to a server using which port?",opts:["TCP 514","UDP 514","UDP 161","TCP 162"],ans:1,exp:"Syslog uses UDP port 514 to send log messages to a syslog server. UDP is used because log messages don't require guaranteed delivery."},
+{cat:"Port Numbers",q:"Which protocol uses TCP port 25?",opts:["POP3","IMAP","SMTP","FTP"],ans:2,exp:"SMTP (Simple Mail Transfer Protocol) uses TCP port 25 for sending email. POP3=110, IMAP=143."},
+// IPv4 Addressing & Subnetting
+{cat:"IPv4 Subnetting",hot:true,q:"A host has an IP address of 192.168.10.130/26. What is the network address of this host?",opts:["192.168.10.0","192.168.10.128","192.168.10.64","192.168.10.192"],ans:1,exp:"/26 = mask 255.255.255.192, block size=64. Subnets: .0, .64, .128, .192. Host .130 falls in the .128 subnet. Network address = 192.168.10.128."},
+{cat:"IPv4 Subnetting",hot:true,q:"How many usable host addresses are available in a /27 subnet?",opts:["32","30","14","62"],ans:1,exp:"/27 = 2^(32-27) = 2^5 = 32 total IPs. Subtract 2 (network + broadcast) = 30 usable hosts. Block size=32."},
+{cat:"IPv4 Subnetting",hot:true,q:"What is the broadcast address for the subnet 172.16.4.0/22?",opts:["172.16.4.255","172.16.7.255","172.16.5.255","172.16.6.255"],ans:1,exp:"/22 = block size 4 in 3rd octet. Starting at 172.16.4.0, the subnet covers .4.0 to .7.255. Broadcast = 172.16.7.255. Next subnet starts at 172.16.8.0."},
+{cat:"IPv4 Subnetting",q:"A company needs to create 14 subnets from 192.168.1.0/24 with the maximum number of hosts per subnet. Which subnet mask should be used?",opts:["/26","/27","/28","/25"],ans:2,exp:"/28 gives 2^4=16 subnets (>14 needed) with 14 hosts each. /27 gives 8 subnets (not enough). /28 is the correct choice for 14+ subnets from a /24."},
+{cat:"IPv4 Subnetting",hot:true,q:"Host A has IP 10.0.0.65/26. Host B has IP 10.0.0.130/26. Can these two hosts communicate WITHOUT a router?",opts:["Yes, they are on the same subnet","No, they are on different subnets","Yes, because they have the same /26 mask","Cannot be determined"],ans:1,exp:"/26 block size=64. Host A (.65) is in subnet 10.0.0.64/26 (.64-.127). Host B (.130) is in subnet 10.0.0.128/26 (.128-.191). Different subnets — need a router."},
+{cat:"IPv4 Subnetting",q:"What subnet mask is represented by /29?",opts:["255.255.255.240","255.255.255.248","255.255.255.252","255.255.255.224"],ans:1,exp:"/29 = 29 ones in binary = 11111111.11111111.11111111.11111000 = 255.255.255.248. Block size = 256-248 = 8. Hosts = 2^3 - 2 = 6."},
+{cat:"IPv4 Subnetting",hot:true,q:"You need a subnet for a point-to-point WAN link with exactly 2 usable hosts. Which subnet mask is most efficient?",opts:["/29","/30","/28","/31"],ans:1,exp:"/30 = 4 IPs, 2 usable hosts — perfect for point-to-point links. /29=6 hosts, /28=14 hosts (wasteful). /31 is technically valid for P2P but /30 is the traditional exam answer."},
+{cat:"IPv4 Subnetting",q:"What is the CIDR notation for subnet mask 255.255.255.192?",opts:["/24","/25","/26","/27"],ans:2,exp:"255.255.255.192 = 11111111.11111111.11111111.11000000 = 26 ones = /26. Block size = 256-192 = 64. Hosts per subnet = 64-2 = 62."},
+{cat:"IPv4 Subnetting",q:"A host with IP 192.168.1.200/25 wants to send a packet to 192.168.1.100. What will happen?",opts:["Packet sent directly — same subnet","Packet sent to default gateway — different subnet","Packet dropped — invalid address","ARP request sent to broadcast"],ans:1,exp:"/25 block=128. Subnet 1: 192.168.1.0-.127. Subnet 2: 192.168.1.128-.255. Host .200 is in subnet 2, host .100 is in subnet 1. Different subnets — must go through router."},
+{cat:"IPv4 Subnetting",q:"How many subnets can be created from 10.0.0.0/8 using a /12 mask?",opts:["8","16","32","256"],ans:1,exp:"We're borrowing bits from /8 to /12 = 4 bits borrowed. 2^4 = 16 subnets. Each subnet is a /12 block."},
+// Private IPv4
+{cat:"Private IPv4",hot:true,q:"Which of the following IP addresses is a private address per RFC 1918?",opts:["172.32.0.1","192.169.1.1","172.20.5.10","191.168.1.1"],ans:2,exp:"172.16.0.0–172.31.255.255 is private (172.20.5.10 falls in this range). 172.32.x is public. 192.169.x is public (private is 192.168.x). 191.168.x is public."},
+{cat:"Private IPv4",hot:true,q:"Which three address ranges are defined as private by RFC 1918?",opts:["10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16","10.0.0.0/8, 172.0.0.0/8, 192.168.0.0/24","10.0.0.0/8, 172.16.0.0/16, 192.168.0.0/16","10.0.0.0/24, 172.16.0.0/12, 192.168.0.0/16"],ans:0,exp:"RFC 1918 private ranges: 10.0.0.0/8 (Class A), 172.16.0.0/12 (Class B — covers 172.16-172.31), 192.168.0.0/16 (Class C). These are NOT routable on the internet."},
+{cat:"Private IPv4",q:"A host has been assigned 169.254.45.12. What does this indicate?",opts:["The host is in a private network","The host failed to get a DHCP address (APIPA)","The host is a loopback address","The host is using a Class B address"],ans:1,exp:"169.254.0.0/16 is the APIPA (Automatic Private IP Addressing) range. Windows assigns this when DHCP fails. The host can only communicate with other APIPA hosts on the same LAN."},
+{cat:"Private IPv4",q:"What is the purpose of 127.0.0.1?",opts:["Default gateway","APIPA address","Loopback address used to test TCP/IP stack locally","First usable address of a subnet"],ans:2,exp:"127.0.0.1 (and the entire 127.0.0.0/8 range) is the loopback address. Pinging 127.0.0.1 tests if the TCP/IP stack on the local machine is working — no network traffic is sent."},
+// IPv6
+{cat:"IPv6",hot:true,q:"Which IPv6 address type is automatically configured on every IPv6-enabled interface and is only valid on the local link?",opts:["Global Unicast","Unique Local","Link-Local","Anycast"],ans:2,exp:"Link-Local addresses (FE80::/10) are automatically configured on every IPv6 interface. They're used for neighbor discovery, routing protocol hellos, and default gateway communication — never forwarded by routers."},
+{cat:"IPv6",hot:true,q:"A router interface is configured with 'ipv6 address 2001:DB8:1:1::/64 eui-64'. The interface MAC is 00:1A:2B:3C:4D:5E. What is the host portion of the IPv6 address?",opts:["001A:2BFF:FE3C:4D5E","021A:2BFF:FE3C:4D5E","021A:2B3C:4D5E:FFFE","001A:2B3C:4DFF:FE5E"],ans:1,exp:"EUI-64: Split MAC (001A:2B | 3C:4D:5E), insert FF:FE → 001A:2B:FF:FE:3C:4D:5E, flip 7th bit of first byte (00→02) → 021A:2BFF:FE3C:4D5E."},
+{cat:"IPv6",hot:true,q:"Which prefix is used for IPv6 Global Unicast addresses?",opts:["FE80::/10","FC00::/7","FF00::/8","2000::/3"],ans:3,exp:"Global Unicast addresses start with 2000::/3 (first 3 bits = 001). These are publicly routable IPv6 addresses — the IPv6 equivalent of public IPv4 addresses."},
+{cat:"IPv6",q:"What is the compressed (abbreviated) form of the IPv6 address 2001:0DB8:0000:0000:0000:0000:0000:0001?",opts:["2001:DB8:0:0:0:0:0:1","2001:DB8::1","2001:0DB8::0001","2001:DB8:0::1"],ans:1,exp:"IPv6 compression rules: Remove leading zeros in each group (0DB8→DB8, 0001→1). Replace the longest run of consecutive all-zero groups with :: (only once). Result: 2001:DB8::1"},
+{cat:"IPv6",q:"Which IPv6 address type is used to send traffic to the nearest device in a group with the same address?",opts:["Multicast","Broadcast","Anycast","Unique Local"],ans:2,exp:"Anycast — same address assigned to multiple devices. Traffic is routed to the nearest (topologically closest) device with that address. Used for DNS servers, CDN nodes. IPv6 has NO broadcast."},
+{cat:"IPv6",q:"What command enables IPv6 routing on a Cisco router?",opts:["ip routing","ipv6 routing","ipv6 unicast-routing","ip ipv6 route enable"],ans:2,exp:"'ipv6 unicast-routing' is the command to enable IPv6 packet forwarding between interfaces. Without it, the router acts as an IPv6 host only — it won't route IPv6 packets."},
+{cat:"IPv6",q:"A device has IPv6 address FD00::1/48. What type of address is this?",opts:["Global Unicast","Link-Local","Unique Local","Multicast"],ans:2,exp:"Unique Local addresses use FC00::/7 prefix (FC00:: or FD00::). FD00:: falls in this range. These are private IPv6 addresses — not routable on the internet. Equivalent to RFC 1918 private IPv4."},
+{cat:"IPv6",hot:true,q:"Which IPv6 address type replaces IPv4 broadcast?",opts:["Anycast","Unicast","Multicast","Link-Local"],ans:2,exp:"IPv6 has NO broadcast. Multicast is used instead. For example, FF02::1 = all IPv6 nodes (like 255.255.255.255), FF02::2 = all routers, FF02::5 = all OSPF routers."},
+// Network Topologies
+{cat:"Network Topologies",hot:true,q:"A company needs to design a data center network with predictable, low-latency east-west traffic between servers. Which architecture is BEST suited?",opts:["Three-tier (Core/Distribution/Access)","Two-tier (Collapsed Core)","Spine-Leaf","SOHO"],ans:2,exp:"Spine-Leaf is designed for data centers — every leaf connects to every spine, providing predictable low latency (max 2 hops between any two servers). Optimized for east-west (server-to-server) traffic."},
+{cat:"Network Topologies",q:"In a three-tier campus network, which layer provides high-speed backbone connectivity and should NOT perform packet filtering or manipulation?",opts:["Access layer","Distribution layer","Core layer","WAN layer"],ans:2,exp:"The Core layer provides ultra-fast backbone transport — its ONLY job is speed. No ACLs, no QoS policy, no routing manipulation. Adding policy processing would slow down the core."},
+{cat:"Network Topologies",q:"Which layer of the three-tier model connects end-user devices like PCs, IP phones, and printers?",opts:["Core","Distribution","Access","Spine"],ans:3,exp:"The Access layer connects end devices (PCs, phones, printers, APs) to the network. It's where PoE, port security, DHCP, and VLANs are configured per port."},
+{cat:"Network Topologies",q:"A small business has a single router providing internet, DHCP, NAT, and Wi-Fi. Which network model does this describe?",opts:["Three-tier enterprise","Spine-leaf data center","SOHO","WAN"],ans:2,exp:"SOHO (Small Office/Home Office) networks use an integrated device (often a single router) that provides routing, switching, Wi-Fi, NAT, and DHCP in one box."},
+// Cabling & Physical
+{cat:"Cabling",hot:true,q:"Which type of fiber optic cable supports transmission distances up to 100 km and is used for WAN and long-haul connections?",opts:["Multimode fiber (MMF)","Single-mode fiber (SMF)","UTP Cat6","Coaxial cable"],ans:1,exp:"Single-mode fiber (SMF) has a smaller 8-10 µm core that carries a single light mode — supports distances up to 100 km. Multimode (MMF) has a larger core and supports up to 2 km."},
+{cat:"Cabling",q:"Which cable type should be used to directly connect two switches without a crossover cable on modern Cisco equipment?",opts:["Straight-through","Crossover","Rollover","Coaxial"],ans:0,exp:"Modern Cisco devices support Auto-MDIX — they automatically detect and correct cable type. A straight-through cable works even between like devices when Auto-MDIX is enabled. However, traditionally a crossover was needed between like devices."},
+{cat:"Cabling",q:"A network admin connects a PC's console port to a router's console port. Which cable type is used?",opts:["Straight-through","Crossover","Rollover (console)","Single-mode fiber"],ans:2,exp:"A rollover (console) cable is used for out-of-band management — connects PC's COM/USB port to the router/switch console port. It's flat and has pins reversed end-to-end (hence 'rollover')."},
+{cat:"Cabling",hot:true,q:"An interface shows a high number of late collisions. What is the MOST likely cause?",opts:["Faulty fiber optic cable","Duplex mismatch between connected devices","Incorrect IP address configuration","Wrong VLAN assignment"],ans:1,exp:"Late collisions (collisions after the first 64 bytes) are the classic symptom of a duplex mismatch. One side is full-duplex, the other is half-duplex. Full-duplex side sends while half-duplex side is also transmitting."},
+{cat:"Cabling",q:"Which output in 'show interfaces' indicates a cable or physical layer problem?",opts:["Output drops","CRC errors","Late collisions","Runts"],ans:1,exp:"CRC (Cyclic Redundancy Check) errors indicate frames arrived with corrupted data — caused by bad cables, improper termination, EMI interference, or duplex mismatch. High CRC = suspect physical layer."},
+// Switching Concepts
+{cat:"Switching",hot:true,q:"A switch receives a frame with a destination MAC address not found in its MAC address table. What action does the switch take?",opts:["Drops the frame","Sends the frame only to the default gateway","Floods the frame out all ports except the source port","Sends an ARP request to find the destination"],ans:2,exp:"Unknown unicast flooding — when the destination MAC is not in the CAM table, the switch floods the frame out all ports in the same VLAN except the port the frame arrived on. This is normal switch behavior."},
+{cat:"Switching",hot:true,q:"How does a switch learn MAC addresses?",opts:["By sending ARP requests","By reading the DESTINATION MAC of incoming frames","By reading the SOURCE MAC of incoming frames","By querying a central MAC database"],ans:2,exp:"MAC learning: when a frame arrives, the switch reads the SOURCE MAC address and records it with the incoming port in the CAM table. This is how it builds the MAC-to-port mapping."},
+{cat:"Switching",q:"What is the default MAC address aging time on a Cisco switch?",opts:["60 seconds","120 seconds","300 seconds","600 seconds"],ans:2,exp:"The default MAC address aging time is 300 seconds (5 minutes). If no frames are received from a MAC within 300 seconds, the entry is removed. Can be changed with 'mac address-table aging-time'."},
+{cat:"Switching",q:"What type of traffic does a switch ALWAYS flood out all ports (except the source port)?",opts:["Known unicast only","Unknown unicast only","Broadcast traffic only","Both unknown unicast and broadcast traffic"],ans:3,exp:"Switches always flood: (1) Broadcast frames (destination FF:FF:FF:FF:FF:FF) and (2) Unknown unicast frames (destination MAC not in CAM table). Known unicast is forwarded only to the correct port."},
+{cat:"Switching",q:"A MAC flooding attack fills a switch's CAM table with fake entries. What behavior does this cause?",opts:["The switch drops all traffic","The switch enters fail-safe mode and blocks all ports","The switch behaves like a hub, flooding all frames out all ports","The switch resets and clears all MAC entries"],ans:2,exp:"When the CAM table is full (from MAC flooding), new unknown MACs can't be added. ALL frames become 'unknown unicast' and are flooded everywhere — attacker can capture all traffic using a packet sniffer."},
+// Wireless
+{cat:"Wireless",hot:true,q:"Which 2.4 GHz Wi-Fi channels are non-overlapping and should be used to avoid interference?",opts:["1, 5, 9","1, 6, 11","2, 7, 12","1, 4, 8, 11"],ans:1,exp:"In the 2.4 GHz band, channels 1, 6, and 11 are the only three non-overlapping channels in the US. Using any other channels causes interference with adjacent channels. Always deploy APs on 1, 6, or 11."},
+{cat:"Wireless",hot:true,q:"Which wireless security standard provides the STRONGEST security and is immune to offline dictionary attacks?",opts:["WEP","WPA","WPA2","WPA3"],ans:3,exp:"WPA3 uses SAE (Simultaneous Authentication of Equals) which prevents offline dictionary attacks — even if you capture the handshake, you can't crack it offline. WEP is broken, WPA is deprecated, WPA2 is vulnerable to KRACK attacks."},
+{cat:"Wireless",hot:true,q:"What encryption algorithm does WPA2 use?",opts:["RC4 (TKIP)","DES","AES (CCMP)","3DES"],ans:2,exp:"WPA2 uses AES with CCMP (Counter Mode CBC-MAC Protocol) for encryption. WPA used TKIP (RC4-based, now considered weak). Always use AES with WPA2, never TKIP."},
+{cat:"Wireless",q:"What does SSID stand for, and what is its purpose?",opts:["Secure Station ID — authenticates devices","Service Set Identifier — identifies the wireless network name","Simple Signal Identifier — measures signal strength","Subnet Station ID — assigns IP ranges"],ans:1,exp:"SSID (Service Set Identifier) is simply the name of the wireless network. It's broadcast in beacon frames so clients can discover and connect to the network."},
+{cat:"Wireless",q:"What is the difference between a BSS and an ESS in wireless networking?",opts:["BSS uses 5GHz, ESS uses 2.4GHz","BSS is one AP + its clients; ESS is multiple APs sharing the same SSID","BSS is enterprise, ESS is home","BSS uses WPA2, ESS uses WPA3"],ans:1,exp:"BSS (Basic Service Set) = one AP and its associated clients. ESS (Extended Service Set) = multiple APs sharing the same SSID, enabling seamless roaming between APs."},
+{cat:"Wireless",q:"A wireless client moving between access points in the same ESS maintains connectivity. What is this process called?",opts:["Association","Authentication","Roaming","Scanning"],ans:2,exp:"Roaming — when a client moves out of range of one AP and connects to another AP with the same SSID in the ESS. The client maintains the same IP address and seamless connectivity."},
+// Network Components
+{cat:"Network Components",hot:true,q:"Which PoE standard provides up to 30W of power and is used for high-power access points and IP cameras?",opts:["IEEE 802.3af (PoE)","IEEE 802.3at (PoE+)","IEEE 802.3bt (PoE++)","IEEE 802.3ab"],ans:1,exp:"IEEE 802.3at (PoE+) provides up to 30W — used for higher-power devices like PTZ cameras and 802.11n/ac APs. 802.3af provides 15.4W (basic PoE). 802.3bt provides 60-100W (PoE++)."},
+{cat:"Network Components",q:"What is the primary difference between a next-generation firewall (NGFW) and a traditional firewall?",opts:["NGFW uses hardware, traditional uses software","NGFW inspects traffic at Layer 7 (application), traditional inspects at Layer 3/4 only","NGFW is slower, traditional is faster","NGFW uses TCP, traditional uses UDP"],ans:1,exp:"NGFW adds Layer 7 (application) inspection — it understands applications, not just ports. Traditional firewall: 'allow TCP port 80'. NGFW: 'allow HTTP from finance team but block YouTube'."},
+{cat:"Network Components",q:"What is the difference between an IDS and an IPS?",opts:["IDS blocks traffic, IPS only alerts","IDS detects and alerts, IPS detects and blocks (inline)","IDS is hardware, IPS is software","IDS uses TCP, IPS uses UDP"],ans:1,exp:"IDS (Intrusion Detection System) = passive — monitors and alerts only. IPS (Intrusion Prevention System) = active/inline — detects AND blocks malicious traffic in real time."},
+{cat:"Network Components",hot:true,q:"A Cisco switch port is connected to a VoIP phone that powers itself from the network cable. Which technology enables this?",opts:["QoS","VLAN trunking","Power over Ethernet (PoE)","EtherChannel"],ans:2,exp:"PoE (Power over Ethernet) delivers both data and electrical power over Ethernet cable. The switch (PSE = Power Sourcing Equipment) powers the phone (PD = Powered Device). Eliminates need for separate power adapters."},
+// Virtualization
+{cat:"Virtualization",q:"Which type of hypervisor runs directly on the physical hardware without an underlying operating system?",opts:["Type 2 hypervisor","Type 1 hypervisor","Container engine","Virtual switch"],ans:1,exp:"Type 1 (bare-metal) hypervisor runs directly on hardware — VMware ESXi, Microsoft Hyper-V, KVM. Type 2 runs on top of an existing OS — VirtualBox, VMware Workstation."},
+{cat:"Virtualization",q:"Which technology allows multiple virtual routing and forwarding tables to exist on a single physical router?",opts:["VLAN","VRF (Virtual Routing and Forwarding)","GRE tunnel","EtherChannel"],ans:1,exp:"VRF (Virtual Routing and Forwarding) creates multiple independent routing tables on one router. Each VRF has its own interfaces, routing table, and forwarding table — like having multiple routers in one box. Used by ISPs."},
+{cat:"Virtualization",hot:true,q:"What is the key difference between virtual machines (VMs) and containers?",opts:["VMs are faster, containers are slower","Containers share the host OS kernel; VMs each run a full OS","VMs use Docker, containers use VMware","Containers need more storage than VMs"],ans:1,exp:"VMs each run a complete OS (GBs of storage, minutes to start). Containers share the host OS kernel — much lighter (MBs, seconds to start). Docker is the most common container platform."},
+// Client OS Verification
+{cat:"Client OS",q:"A Windows user cannot browse the internet but can ping 192.168.1.1. Which command shows their IP, gateway, and DNS configuration?",opts:["ping /all","ipconfig /all","tracert /all","netstat /all"],ans:1,exp:"'ipconfig /all' shows full TCP/IP configuration — IP address, subnet mask, default gateway, DNS servers, MAC address, DHCP server. Essential first step in Windows network troubleshooting."},
+{cat:"Client OS",q:"A Windows host received a 169.254.x.x address. Which ipconfig command will force it to get a new DHCP address?",opts:["ipconfig /all","ipconfig /flush","ipconfig /release then ipconfig /renew","ipconfig /reset"],ans:2,exp:"'ipconfig /release' releases the current DHCP lease, then 'ipconfig /renew' requests a new address from the DHCP server. These commands are run in sequence."},
+{cat:"Client OS",q:"Which Linux command shows the IP address configuration of all interfaces?",opts:["ifconfig /all","ip addr show","show ip interface","ipconfig -a"],ans:1,exp:"'ip addr show' (or 'ip a') is the modern Linux command to show all interface IP addresses. The older 'ifconfig' still works on many systems. Cisco IOS uses 'show ip interface brief'."},
+// Advanced Subnetting
+{cat:"IPv4 Subnetting",hot:true,q:"What is the maximum number of usable host addresses in a Class C network with default mask?",opts:["253","254","255","256"],ans:1,exp:"Default Class C = /24 = 256 total addresses. Subtract network address and broadcast = 254 usable hosts. Formula: 2^8 - 2 = 254."},
+{cat:"IPv4 Subnetting",q:"A network 192.168.5.0/24 needs to be divided into subnets supporting at least 50 hosts each. Which mask achieves this with the MOST subnets?",opts:["/25","/26","/27","/28"],ans:1,exp:"/26 = 62 hosts per subnet (meets ≥50 requirement) and creates 4 subnets from /24. /25 = 126 hosts but only 2 subnets. /27 = only 30 hosts (doesn't meet 50). /26 is optimal."},
+{cat:"IPv4 Subnetting",hot:true,q:"Which address is the network address of 10.1.1.0/24?",opts:["10.1.1.1","10.1.1.0","10.1.1.255","10.1.0.0"],ans:1,exp:"The network address is the FIRST address in the subnet — all host bits set to 0. For 10.1.1.0/24, the network address = 10.1.1.0. Broadcast = 10.1.1.255. First usable host = 10.1.1.1."},
+{cat:"IPv4 Subnetting",q:"Which subnet does host 172.16.35.200/20 belong to?",opts:["172.16.32.0/20","172.16.35.0/20","172.16.16.0/20","172.16.48.0/20"],ans:0,exp:"/20 = block size 16 in 3rd octet. Subnets: 172.16.0.0, 16.0, 32.0, 48.0... Host .35.200 falls in the 172.16.32.0 block (32 to 47). Subnet = 172.16.32.0/20."},
+// OSI Applications
+{cat:"OSI & TCP/IP",q:"At which OSI layer does SSL/TLS encryption operate?",opts:["Layer 4 – Transport","Layer 5 – Session","Layer 6 – Presentation","Layer 7 – Application"],ans:2,exp:"SSL/TLS operates at Layer 6 (Presentation). The Presentation layer handles encryption, decryption, compression, and data format conversion. It 'presents' data in a usable format for the Application layer."},
+{cat:"OSI & TCP/IP",q:"Which OSI layer is responsible for establishing, maintaining, and terminating sessions between applications?",opts:["Transport","Session","Presentation","Application"],ans:1,exp:"Layer 5 (Session) establishes, manages, and terminates communication sessions between applications. NetBIOS, PPTP, and SQL sessions operate here."},
+{cat:"OSI & TCP/IP",q:"A router receives a packet and needs to make a forwarding decision. At which OSI layer does this occur?",opts:["Layer 1","Layer 2","Layer 3","Layer 4"],ans:2,exp:"Routing decisions are made at Layer 3 (Network layer) based on IP addresses. The router reads the destination IP in the packet header and matches it against the routing table."},
+// TCP Windows and Flow
+{cat:"TCP vs UDP",q:"What happens when a TCP receiver's buffer is full and it sends a window size of 0 to the sender?",opts:["The connection is terminated","The sender stops transmitting until it receives a non-zero window size","The sender uses UDP instead","The sender ignores the window size"],ans:1,exp:"TCP window size = 0 means the receiver's buffer is full — 'stop sending'. The sender pauses transmission and waits for a window update (non-zero window size) before sending more data."},
+{cat:"TCP vs UDP",q:"What is the purpose of TCP sequence numbers?",opts:["To identify the source port","To ensure packets are reassembled in the correct order","To set the time-to-live","To identify the destination MAC"],ans:1,exp:"TCP sequence numbers track the byte order of transmitted data, allowing the receiver to reassemble segments in the correct order even if they arrive out of sequence."},
+// More Networking Concepts
+{cat:"Network Components",q:"What is the purpose of the TTL (Time to Live) field in an IP packet?",opts:["Encrypts the packet","Prevents routing loops by decrementing at each hop; packet dropped when TTL=0","Sets the transmission speed","Identifies the transport protocol"],ans:1,exp:"TTL prevents packets from looping forever. Each router decrements TTL by 1. When TTL reaches 0, the packet is dropped and an ICMP 'Time Exceeded' message is sent back. Default TTL=64 (Linux) or 128 (Windows)."},
+{cat:"Network Components",q:"Which protocol is used to map an IP address to a MAC address on a local network?",opts:["DNS","DHCP","ARP","ICMP"],ans:2,exp:"ARP (Address Resolution Protocol) maps Layer 3 IP addresses to Layer 2 MAC addresses. Host broadcasts 'Who has 192.168.1.1?' — the device with that IP replies with its MAC. Router then creates an ARP entry."},
+{cat:"Network Components",hot:true,q:"A host sends a ping to 255.255.255.255. What type of transmission is this?",opts:["Unicast","Multicast","Broadcast","Anycast"],ans:2,exp:"255.255.255.255 is the limited broadcast address. This sends to ALL hosts on the local subnet. Routers do NOT forward broadcasts — they stay on the local network segment."},
+{cat:"Network Components",q:"What does the subnet mask tell a host?",opts:["The IP address of the default gateway","Which portion of the IP address is the network portion and which is the host portion","The maximum number of routers on the network","The DNS server address"],ans:1,exp:"The subnet mask defines the boundary between the network bits and host bits in an IP address. With this info, the host can determine if a destination is on the same subnet (direct delivery) or a different subnet (send to gateway)."},
+// Advanced Topics
+{cat:"IPv6",q:"Which command verifies IPv6 address assignment on a Cisco router interface?",opts:["show ip interface brief","show ipv6 interface brief","show ip route ipv6","show ipv6 routing"],ans:1,exp:"'show ipv6 interface brief' shows all interfaces with their IPv6 addresses and status — both link-local and global unicast. Equivalent of 'show ip interface brief' for IPv4."},
+{cat:"IPv6",q:"What is the IPv6 equivalent of the IPv4 address 127.0.0.1?",opts:["FE80::1","::1","FC00::1","2001::1"],ans:1,exp:"::1 is the IPv6 loopback address (equivalent to IPv4's 127.0.0.1). It's the compressed form of 0000:0000:0000:0000:0000:0000:0000:0001."},
+{cat:"Wireless",q:"A wireless network uses RADIUS server authentication. Users log in with their individual corporate credentials. Which security mode is this?",opts:["WPA2-Personal (PSK)","WPA2-Enterprise (802.1X)","WEP-Open","WPA3-SAE"],ans:1,exp:"WPA2-Enterprise uses 802.1X with a RADIUS server — each user authenticates with their own username and password. WPA2-Personal (PSK) uses a shared passphrase for all users. Enterprise mode is more secure and scalable."},
+{cat:"Virtualization",q:"Which protocol do Lightweight Access Points (LWAPs) use to communicate with a Wireless LAN Controller (WLC)?",opts:["LLDP","CDP","CAPWAP","LWAPP"],ans:2,exp:"CAPWAP (Control and Provisioning of Wireless Access Points) is the current standard protocol for LWAP-to-WLC communication. It replaced the older LWAPP. Uses UDP 5246 (control) and 5247 (data)."},
+// Scenario-Based
+{cat:"IPv4 Subnetting",hot:true,q:"A host pings 10.10.10.1 but gets no response. The host's IP is 10.10.10.100/24 and default gateway is 10.10.10.1. Which command on a Windows host would help identify the problem?",opts:["ipconfig /release","tracert 10.10.10.1","ipconfig /flushdns","netstat -an"],ans:1,exp:"'tracert' (traceroute) on Windows traces the path to the destination, showing where the connection fails. For a gateway ping failure, it would show if the first hop (gateway) is reachable or not."},
+{cat:"TCP vs UDP",hot:true,q:"Which scenario requires TCP rather than UDP?",opts:["Streaming live video where occasional packet loss is acceptable","Online gaming where low latency is critical","Downloading a software update file","Sending voice over IP (VoIP)"],ans:2,exp:"Downloading a file requires every byte to be received correctly and in order — that's TCP. If any bytes are missing, the file is corrupted. Video/gaming/VoIP tolerate occasional loss and need low latency, so UDP is preferred."},
+{cat:"OSI & TCP/IP",hot:true,q:"Which layer of the OSI model is responsible for converting data between different formats, such as encryption and character encoding?",opts:["Application layer","Session layer","Presentation layer","Transport layer"],ans:2,exp:"Presentation layer (Layer 6) handles data format translation, encryption/decryption, and compression. It ensures data sent by the application layer of one system can be read by the application layer of another (e.g., ASCII to EBCDIC, JPEG, MP4)."},
+{cat:"Network Components",q:"Which of the following BEST describes the function of a default gateway?",opts:["It assigns IP addresses to hosts","It is the device that connects a local network to other networks or the internet","It provides name-to-IP resolution","It filters traffic based on port numbers"],ans:1,exp:"The default gateway is the router interface IP on the local subnet. When a host needs to send traffic to a different network (or the internet), it sends the packet to the default gateway, which routes it onward."},
+{cat:"Cabling",q:"What is the maximum distance for a standard 1000BASE-T (Gigabit Ethernet) connection over UTP Cat5e cable?",opts:["55 meters","100 meters","150 meters","500 meters"],ans:1,exp:"1000BASE-T over Cat5e or Cat6 UTP has a maximum segment length of 100 meters (328 feet). This is the 100m rule for all standard copper Ethernet — 10BASE-T, 100BASE-TX, 1000BASE-T."},
+{cat:"Switching",q:"What command shows a switch's MAC address table?",opts:["show ip arp","show mac address-table","show cam table","show arp"],ans:1,exp:"'show mac address-table' displays the CAM (Content Addressable Memory) table — all MAC addresses, which VLAN they belong to, and which port they were learned on."},
+{cat:"Network Topologies",q:"What is the primary advantage of a spine-leaf architecture over a traditional three-tier architecture in a data center?",opts:["Lower cost","Predictable and consistent east-west latency (always 2 hops)","Better for north-south traffic","Simpler management"],ans:1,exp:"Spine-leaf guarantees that ANY two servers are always exactly 2 hops apart (leaf→spine→leaf). Three-tier varies depending on where servers are. This predictability is critical for latency-sensitive applications."},
+{cat:"Private IPv4",q:"A packet from 192.168.1.10 is sent to 8.8.8.8. The router has NAT configured. What happens to the source IP when leaving the router's WAN interface?",opts:["Source remains 192.168.1.10","Source is translated to the router's public IP address","Source is changed to 8.8.8.8","Source is removed from the packet"],ans:1,exp:"NAT translates the source IP from the private address (192.168.1.10 = Inside Local) to the router's public IP (Inside Global) before forwarding to the internet. The return traffic uses the public IP to find its way back."},
+// Final Tricky Questions
+{cat:"IPv4 Subnetting",hot:true,q:"How many hosts can be on the 10.0.0.0/8 network?",opts:["254","65,534","16,777,214","16,777,216"],ans:2,exp:"/8 = 2^(32-8) - 2 = 2^24 - 2 = 16,777,216 - 2 = 16,777,214 usable hosts. The subtraction of 2 accounts for the network address (10.0.0.0) and broadcast address (10.255.255.255)."},
+{cat:"OSI & TCP/IP",q:"Which protocol is used to test network connectivity and reports errors with ICMP messages?",opts:["TCP","UDP","ICMP","ARP"],ans:2,exp:"ICMP (Internet Control Message Protocol) is used for network diagnostics — ping uses ICMP Echo Request and Echo Reply. Traceroute uses ICMP Time Exceeded messages. ICMP operates at Layer 3."},
+{cat:"TCP vs UDP",q:"Which well-known port does NTP use?",opts:["UDP 69","UDP 123","TCP 123","UDP 161"],ans:1,exp:"NTP (Network Time Protocol) uses UDP port 123. UDP is appropriate because time sync packets are small and fast delivery is more important than reliability."},
+{cat:"Wireless",q:"What does RF stand for in the context of wireless networking?",opts:["Remote Forwarding","Radio Frequency","Routing Framework","Received Frame"],ans:1,exp:"RF = Radio Frequency — the electromagnetic waves used to carry wireless signals. Wi-Fi operates on 2.4 GHz and 5 GHz RF bands. RF characteristics affect range, interference, and data rates."},
+{cat:"IPv6",q:"When does a host generate an IPv6 link-local address automatically?",opts:["Only when a DHCPv6 server is present","Only when manually configured","Automatically when IPv6 is enabled on the interface","Only when the router sends an RA message"],ans:2,exp:"An IPv6 link-local address (FE80::/10) is automatically generated on any interface with IPv6 enabled — regardless of whether a DHCPv6 server exists or a router sends RAs. It's always there."},
+{cat:"Network Components",hot:true,q:"A network administrator wants to prevent a Layer 2 loop but maintain redundant links. Which technology achieves this?",opts:["EtherChannel","Spanning Tree Protocol (STP)","VLANs","HSRP"],ans:1,exp:"STP (Spanning Tree Protocol) prevents Layer 2 loops by logically blocking redundant links. Only one active path exists at a time. If the active path fails, STP unblocks the redundant link — maintaining redundancy without loops."},
+{cat:"Network Topologies",q:"Which type of connection provides a dedicated, private link between a customer and a service provider?",opts:["Internet VPN","MPLS/Leased line","Shared media","DSL"],ans:1,exp:"MPLS (Multiprotocol Label Switching) and leased lines provide dedicated private WAN connections. The bandwidth is not shared — unlike internet connections. Used for high-reliability enterprise WAN connectivity."},
+{cat:"Cabling",q:"A switch port shows 'Input errors: 5000, CRC: 4998'. What is the MOST likely cause?",opts:["The port is in the wrong VLAN","There is a duplex mismatch or faulty cable","The switch needs to be rebooted","The IP address is incorrectly configured"],ans:1,exp:"High CRC errors (nearly all input errors are CRC) = corrupt frames arriving. Primary causes: bad/damaged cable, too long, incorrect termination, duplex mismatch, or EMI interference. Physical layer issue."},
+{cat:"IPv4 Subnetting",q:"A host at 192.168.1.62/26 sends a packet to 192.168.1.65/26. Does it go through a router?",opts:["No — both are in the 192.168.1.0/26 subnet","No — both are in the 192.168.1.64/26 subnet","Yes — they are in different /26 subnets","Yes — different Class C networks"],ans:2,exp:"/26 block=64. .62 is in subnet 192.168.1.0/26 (.0-.63). .65 is in subnet 192.168.1.64/26 (.64-.127). Different subnets — traffic must go through a router (default gateway)."},
+{cat:"Network Components",q:"What does a router do with a packet whose destination IP address has no matching route in the routing table and no default route is configured?",opts:["Floods the packet out all interfaces","Sends the packet to the nearest router","Drops the packet and sends an ICMP Destination Unreachable message","Holds the packet and waits for a route to appear"],ans:2,exp:"With no matching route and no default route, the router drops the packet and sends an ICMP 'Destination Unreachable' message back to the source. This is the 'implicit deny' of routing — just like ACLs."},
+];
+
+let userAnswers = {}; // {qIndex: selectedOption}
+let submitted = {}; // {qIndex: true}
+let currentFilter = 'all';
+
+
+
+// Add above renderList()-------------------------------------------
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ------------------------------------------------------------------
+
+function renderList() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const container = document.getElementById('qlist');
+  let html = '';
+  qs.forEach((q, i) => {
+    if (currentFilter === 'correct' && !(submitted[i] && userAnswers[i] === q.ans)) return;
+    if (currentFilter === 'wrong' && !(submitted[i] && userAnswers[i] !== q.ans)) return;
+    if (currentFilter === 'unattempted' && submitted[i]) return;
+    if (search && !q.q.toLowerCase().includes(search) && !q.cat.toLowerCase().includes(search) && !q.exp.toLowerCase().includes(search)) return;
+
+    const isSubmitted = submitted[i];
+    const isCorrect = isSubmitted && userAnswers[i] === q.ans;
+    const isWrong = isSubmitted && userAnswers[i] !== q.ans;
+    let cardClass = 'q-card';
+    if (isCorrect) cardClass += ' answered-correct';
+    if (isWrong) cardClass += ' answered-wrong';
+
+    let badge = '';
+    if (isCorrect) badge = '<span class="result-badge rb-correct">✓ Correct</span>';
+    else if (isWrong) badge = '<span class="result-badge rb-wrong">✗ Wrong</span>';
+    else if (userAnswers[i] !== undefined) badge = '<span class="result-badge rb-skip">Selected</span>';
+
+    html += `<div class="${cardClass}" id="qcard-${i}">
+      <div class="q-header">
+        <span class="q-num">Q${i+1}${q.hot?'<span class="tag-hot">🔥</span>':''}</span>
+        <span style="flex:1"></span>
+        ${badge}
+        <span class="q-category">${q.cat}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">`;
+    const letters = ['A','B','C','D'];
+    q.opts.forEach((opt, oi) => {
+      let cls = 'opt';
+      if (userAnswers[i] === oi && !isSubmitted) cls += ' selected';
+      if (isSubmitted && oi === q.ans) cls += ' correct-ans';
+      if (isSubmitted && userAnswers[i] === oi && oi !== q.ans) cls += ' wrong-ans';
+      const disabled = isSubmitted ? 'style="cursor:default"' : `onclick="selectOpt(${i},${oi})"`;
+      html += `<div class="${cls}" ${disabled}><span class="opt-letter">${letters[oi]}</span>${opt}</div>`;
+    });
+    html += `</div>
+      <div class="btn-row">
+        ${!isSubmitted ? `<button class="btn btn-submit" onclick="submitQ(${i})">Submit Answer</button>` : ''}
+        <button class="btn btn-show" onclick="toggleExp(${i})">${isSubmitted?'Show/Hide Explanation':'Show Answer'}</button>
+        ${isSubmitted ? `<button class="btn btn-reset-q" onclick="resetQ(${i})">Reset</button>` : ''}
+      </div>
+      <div class="explanation" id="exp-${i}"><strong>✅ Explanation:</strong> ${q.exp}</div>
+    </div>`;
+  });
+  if (!html) html = '<div style="padding:20px;text-align:center;color:#888">No questions match your filter.</div>';
+  container.innerHTML = html;
+  updateStats();
+}
+// -------------------------------------------------------------------
+shuffleArray(qs);
+
+qs.forEach(q => {
+  const correctAnswer = q.opts[q.ans];
+
+  for (let i = q.opts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [q.opts[i], q.opts[j]] = [q.opts[j], q.opts[i]];
+  }
+
+  q.ans = q.opts.indexOf(correctAnswer);
+});
+
+renderList();
+// -------------------------------------------------------------------
+
+function selectOpt(qi, oi) {
+  if (submitted[qi]) return;
+  userAnswers[qi] = oi;
+  renderList();
+}
+
+function submitQ(qi) {
+  if (userAnswers[qi] === undefined) { alert('Please select an answer first!'); return; }
+  submitted[qi] = true;
+  renderList();
+}
+
+function toggleExp(qi) {
+  const el = document.getElementById('exp-'+qi);
+  if (el) el.classList.toggle('show');
+}
+
+function resetQ(qi) {
+  delete userAnswers[qi];
+  delete submitted[qi];
+  renderList();
+}
+
+function submitAll() {
+  qs.forEach((q,i) => { if (userAnswers[i] !== undefined) submitted[i] = true; });
+  renderList();
+}
+
+function revealAllExplanations() {
+  document.querySelectorAll('.explanation').forEach(e => e.classList.add('show'));
+}
+
+function resetAll() {
+  if (!confirm('Reset all answers?')) return;
+  userAnswers = {}; submitted = {};
+  renderList();
+}
+
+function showScore() {
+  const total = qs.length;
+  const attempted = Object.keys(submitted).length;
+  const correct = qs.filter((q,i) => submitted[i] && userAnswers[i] === q.ans).length;
+  const wrong = attempted - correct;
+  const pct = attempted > 0 ? Math.round(correct/total*100) : 0;
+  let grade = pct>=90?'🏆 Excellent! Exam Ready!':pct>=75?'👍 Good! Keep Practicing':pct>=60?'📚 Needs More Review':'🔄 Study More Before Exam';
+  const overlay = document.createElement('div'); overlay.className='overlay'; overlay.onclick=closeModal;
+  const modal = document.createElement('div'); modal.className='score-modal';
+  modal.innerHTML = `<h2>Your Score</h2><div class="big">${pct}%</div>
+    <p style="margin:10px 0;font-size:14px">${correct} / ${total} correct</p>
+    <p style="color:#dc2626;margin-bottom:6px">Wrong: ${wrong}</p>
+    <p style="color:#6b7280;margin-bottom:14px">Unattempted: ${total-attempted}</p>
+    <p style="font-size:18px;font-weight:700;color:#5B3FD4">${grade}</p>
+    <button class="gbtn gbtn-primary" style="margin-top:16px" onclick="closeModal()">Close</button>`;
+  document.body.appendChild(overlay); document.body.appendChild(modal);
+  window._modal=modal; window._overlay=overlay;
+}
+
+function closeModal() {
+  if(window._modal) window._modal.remove();
+  if(window._overlay) window._overlay.remove();
+}
+
+function updateStats() {
+  const total = qs.length;
+  const attempted = Object.keys(submitted).length;
+  const correct = qs.filter((q,i) => submitted[i] && userAnswers[i] === q.ans).length;
+  const wrong = attempted - correct;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-correct').textContent = correct;
+  document.getElementById('s-wrong').textContent = wrong;
+  document.getElementById('s-unattempted').textContent = total - attempted;
+  const pct = attempted > 0 ? Math.round(correct/total*100) : 0;
+  document.getElementById('s-pct').textContent = pct + '%';
+  document.getElementById('prog').style.width = Math.round(attempted/total*100) + '%';
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function applyFilters() { renderList(); }
+
+renderList();
+</script>
+</body>
+</html>

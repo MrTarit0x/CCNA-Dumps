@@ -1,0 +1,229 @@
+PROJECT NAME: LocalSync Drive
+
+Build a complete full-stack web application that allows browsing, uploading, downloading, deleting, renaming, and managing files stored on an Android device exposed through an FTP server (CX File Explorer FTP Server).
+
+TECH STACK:
+
+* Backend: Python FastAPI
+* Frontend: HTML, CSS, JavaScript
+* UI Framework: Bootstrap 5
+* Icons: Bootstrap Icons
+* Template Engine: Jinja2
+* File Transfers: Python ftplib
+* Optional: WebSocket support for live updates
+* Responsive design for desktop and mobile
+
+FTP CONFIGURATION:
+
+* Host: configurable
+* Port: configurable
+* Username: configurable
+* Password: configurable
+* Store credentials in environment variables
+
+GOAL:
+Create a browser-based file manager similar to Google Drive, Windows Explorer, or File Browser.
+
+FEATURES:
+
+1. Authentication
+
+* Local login page
+* Session-based authentication
+* Logout button
+
+2. Dashboard
+
+* Modern sidebar navigation
+* Storage statistics
+* Current FTP server information
+* Connected status indicator
+
+3. File Browser
+
+* Navigate folders recursively
+* Breadcrumb navigation
+* Folder tree view
+* Current path display
+* Back button
+* Refresh button
+
+4. File Listing
+   Display:
+
+* Name
+* Type
+* Size
+* Modified date
+* Actions
+
+Support:
+
+* Sorting
+* Pagination
+* Search
+* Filter by type
+
+5. Download Files
+
+* Single file download
+* Large file streaming
+* Progress indication
+
+6. Upload Files
+
+* Drag and drop upload
+* Multiple file upload
+* Upload progress bar
+* Upload into current folder
+
+7. Folder Operations
+
+* Create folder
+* Rename folder
+* Delete folder
+* Move folder
+
+8. File Operations
+
+* Rename file
+* Delete file
+* Move file
+* Copy file
+* Download file
+
+9. Preview System
+   Preview:
+
+* Images
+* PDF
+* Text files
+* Audio
+* Video
+
+Use modal dialogs.
+
+10. Mobile Friendly
+
+* Responsive design
+* Touch-friendly controls
+* Mobile sidebar
+
+11. Search Engine
+
+* Search by filename
+* Recursive search
+* Instant search results
+
+12. Multi Device Architecture
+    Create support for multiple FTP sources.
+
+Example:
+
+Sources
+├── Android Phone
+├── Android Tablet
+├── Kali Shared Folder
+
+User can switch between sources.
+
+13. API Endpoints
+
+GET /api/files
+GET /api/folder
+GET /api/download
+POST /api/upload
+POST /api/create-folder
+POST /api/rename
+POST /api/delete
+POST /api/move
+POST /api/copy
+GET /api/search
+
+14. Error Handling
+
+* FTP connection errors
+* Timeout handling
+* Invalid path handling
+* User-friendly messages
+
+15. Security
+
+* Path validation
+* Prevent directory traversal
+* Session authentication
+* CSRF protection
+
+16. Project Structure
+
+project/
+├── app.py
+├── config.py
+├── ftp_manager.py
+├── auth.py
+├── requirements.txt
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── icons/
+├── templates/
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── browser.html
+│   └── preview.html
+└── uploads/
+
+17. UI Requirements
+
+Theme:
+
+* Dark mode
+* Light mode
+* Toggle switch
+
+Style:
+
+* Modern glassmorphism
+* Smooth animations
+* Loading spinners
+
+18. Additional Features
+
+* QR code showing access URL
+* Recent files
+* Favorites
+* File sharing links (local only)
+* Clipboard copy path
+* ZIP folder download
+
+19. Deliverables
+
+Generate:
+
+* Complete backend code
+* Complete frontend code
+* requirements.txt
+* .env.example
+* README.md
+* Installation instructions
+* Dockerfile
+* docker-compose.yml
+
+20. Important Requirement
+
+The FTP backend must work with CX File Explorer FTP server on Android.
+
+The application must browse Android folders such as:
+
+* Download
+* DCIM
+* Pictures
+* Movies
+* Music
+* Documents
+
+without mounting the phone filesystem locally.
+
+Use direct FTP communication through Python ftplib.
+
+Provide production-ready code with comments and modular architecture.
