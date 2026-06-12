@@ -42,10 +42,10 @@
     <button class="filter-btn" onclick="setFilter('wrong',this)">✗ Wrong</button>
   </div>
   <div class="global-btns">
-    <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All Answers</button>
-    <button class="gbtn gbtn-green" onclick="revealAllExplanations()">Show All Explanations</button>
-    <button class="gbtn gbtn-gray" onclick="resetAll()">Reset Quiz</button>
-    <button class="gbtn gbtn-red" onclick="showScore()">📊 Show Score</button>
+    <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All</button>
+    <button class="gbtn gbtn-green" onclick="revealAllExplanations()">All Explanations</button>
+    <button class="gbtn gbtn-gray" onclick="resetAll()">Retake</button>
+    <button class="gbtn gbtn-red" onclick="showScore()">Show Score</button>
   </div>
   <div id="qlist"></div>
 
@@ -262,6 +262,9 @@ renderList();
 
     renderList();
   </script>
+  <iframe src="../navbar.html" 
+        style="border:none;width:100%;height:70px;position:fixed;bottom:0;left:0;z-index:999;">
+</iframe>
 </body>
 
 </html>

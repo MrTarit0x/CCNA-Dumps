@@ -4,6 +4,7 @@ body{
     font-family:system-ui,sans-serif;
     min-height:100vh;
     padding:10px;
+    padding-bottom:100px;
     font-size:12px;
     color:#ffffff;
 
@@ -17,7 +18,7 @@ body{
 h1{font-size:15px;color:var(--accent,#5B3FD4);margin-bottom:10px;border-bottom:2px solid var(--accent,#5B3FD4);padding-bottom:6px}
 .search-wrap{margin-bottom:10px}
 .search-wrap input{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--accent,#5B3FD4);font-size:13px;background:var(--surface,#f8f8f8);color:var(--fg,#1a1a1a);outline:none}
-.topic-nav{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+
 .topic-btn{padding:4px 10px;border-radius:16px;border:1.5px solid var(--accent,#5B3FD4);background:transparent;color:var(--accent,#5B3FD4);cursor:pointer;font-size:11px;font-weight:600;transition:all 0.2s}
 .topic-btn.active,.topic-btn:hover{background:var(--accent,#5B3FD4);color:#fff}
 .topic-section{margin-bottom:18px;border:1px solid #ddd;border-radius:10px;overflow:hidden}
@@ -78,4 +79,161 @@ code{background:var(--surface2,#1e1e2e);color:#a6e3a1;padding:2px 7px;border-rad
 
 .cmd-table tr:hover td{
     background:rgba(255,255,255,.05);
+}
+
+
+
+
+.topic-btn{
+  padding:5px 12px;
+  border-radius:18px;
+  font-size:11px;
+  font-weight:700;
+  border:none;
+  cursor:pointer;
+  color:#fff;
+  transition:all 0.2s ease;
+  white-space:nowrap;
+}
+
+.topic-btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.1);
+}
+
+/* BASIC */
+.topic-btn.basic{
+  background:linear-gradient(135deg,#5B3FD4,#5b21b6);
+}
+
+/* INTERFACES */
+.topic-btn.interfaces{
+  background:linear-gradient(135deg,#10b981,#059669);
+}
+
+/* VLAN */
+.topic-btn.vlan{
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+}
+
+/* STP */
+.topic-btn.stp{
+  background:linear-gradient(135deg,#0891b2,#0ea5e9);
+}
+
+/* ETHERCHANNEL */
+.topic-btn.etherchannel{
+  background:linear-gradient(135deg,#7c3aed,#a855f7);
+}
+
+/* CDP & LLDP */
+.topic-btn.cdp_lldp{
+  background:linear-gradient(135deg,#059669,#22c55e);
+}
+
+/* STATIC ROUTING */
+.topic-btn.routing_static{
+  background:linear-gradient(135deg,#b45309,#f59e0b);
+}
+
+/* OSPF */
+.topic-btn.ospf{
+  background:linear-gradient(135deg,#0f766e,#14b8a6);
+}
+
+/* NAT */
+.topic-btn.nat{
+  background:linear-gradient(135deg,#b91c1c,#ef4444);
+}
+
+/* DHCP */
+.topic-btn.dhcp{
+  background:linear-gradient(135deg,#0369a1,#0ea5e9);
+}
+
+/* NTP */
+.topic-btn.ntp{
+  background:linear-gradient(135deg,#4338ca,#6366f1);
+}
+
+/* SNMP */
+.topic-btn.snmp{
+  background:linear-gradient(135deg,#7c2d12,#ea580c);
+}
+
+/* SYSLOG */
+.topic-btn.syslog{
+  background:linear-gradient(135deg,#1e40af,#3b82f6);
+}
+
+/* ACL */
+.topic-btn.acl{
+  background:linear-gradient(135deg,#991b1b,#dc2626);
+}
+
+/* LAYER 2 SECURITY */
+.topic-btn.layer2sec{
+  background:linear-gradient(135deg,#065f46,#10b981);
+}
+
+/* SSH */
+.topic-btn.ssh{
+  background:linear-gradient(135deg,#1d4ed8,#60a5fa);
+}
+
+/* QoS */
+.topic-btn.qos{
+  background:linear-gradient(135deg,#6d28d9,#8b5cf6);
+}
+
+/* FHRP */
+.topic-btn.fhrp{
+  background:linear-gradient(135deg,#b45309,#f59e0b);
+}
+
+/* WIRELESS */
+.topic-btn.wireless{
+  background:linear-gradient(135deg,#0891b2,#06b6d4);
+}
+
+/* TROUBLESHOOTING */
+.topic-btn.troubleshoot{
+  background:linear-gradient(135deg,#374151,#6b7280);
+}
+
+.topic-btn.active{
+  outline:2px solid #ffffff;
+  transform:scale(1.05);
+  filter:brightness(1.2);
+}
+
+
+.topic-nav{
+  display:flex;
+  flex-wrap:wrap;   /* desktop default = wrap */
+  gap:6px;
+  padding:8px;
+  margin-bottom:12px;
+  scrollbar-width:none;
+
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(10px);
+}
+
+/* MOBILE → horizontal scroll */
+@media (max-width: 768px){
+  .topic-nav{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .topic-nav::-webkit-scrollbar{
+    display:none;
+  }
+
+  .topic-btn{
+    flex:0 0 auto;
+  }
 }

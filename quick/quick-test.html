@@ -13,7 +13,7 @@
 
   <div class="complete-banner">
     🏆 CCNA All Domains — Quick Test 🏆
-    <br>( 10 Random Questions)
+    <br>( 20 Random Questions)
   </div>
 
   <div class="stats-bar">
@@ -49,8 +49,8 @@
 
   <div class="global-btns">
     <button class="gbtn gbtn-primary" onclick="submitAll()">Submit All</button>
-    <button class="gbtn gbtn-green" onclick="showAllExp()">Show Explanations</button>
-    <button class="gbtn gbtn-gray" onclick="location.reload()">New Test</button>
+    <button class="gbtn gbtn-green" onclick="showAllExp()">All Explanations</button>
+    <button class="gbtn gbtn-gray" onclick="location.reload()">Retake</button>
     <button class="gbtn gbtn-red" onclick="showScore()">Final Score</button>
   </div>
 
@@ -238,22 +238,63 @@
         (attempted / total * 100) + '%';
     }
 
-    function showScore() {
+function showScore() {
 
-      const total = qs.length;
+  const total = qs.length;
+  const attempted = Object.keys(sub).length;
 
-      const correct = qs.filter((q, i) =>
-        sub[i] && uA[i] === q.ans
-      ).length;
+  const correct = qs.filter((q, i) =>
+    sub[i] && uA[i] === q.ans
+  ).length;
 
-      const pct = Math.round((correct / total) * 100);
+  const wrong = attempted - correct;
+  const remaining = total - attempted;
+  const pct = Math.round((correct / total) * 100);
 
-      alert(`Score: ${correct}/${total} (${pct}%)`);
-    }
+  let message = "";
+
+  if (pct >= 90) message = "🏆 CCNA Ready — Excellent!";
+  else if (pct >= 75) message = "👍 Almost There — Keep Pushing!";
+  else if (pct >= 60) message = "📚 Good Try — Review Weak Areas";
+  else message = "🔄 More Practice Needed";
+
+  // Overlay
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.onclick = closeModal;
+
+  // Modal
+  const modal = document.createElement("div");
+  modal.className = "score-modal";
+
+  modal.innerHTML = `
+    <h2>Quick Test Score</h2>
+    <div class="big">${pct}%</div>
+    <p style="margin:8px 0;font-size:14px">${correct}/${total} correct</p>
+    <p style="color:#dc2626">Wrong: ${wrong}</p>
+    <p style="color:#6b7280;margin-bottom:12px">Unattempted: ${remaining}</p>
+    <p style="font-size:16px;font-weight:700;color:#5B3FD4">${message}</p>
+    <button class="gbtn gbtn-primary" style="margin-top:14px" onclick="closeModal()">Close</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+
+  window._overlay = overlay;
+  window._modal = modal;
+}
+
+function closeModal() {
+  if (window._overlay) window._overlay.remove();
+  if (window._modal) window._modal.remove();
+}
 
     render();
 
   </script>
+<iframe src="../navbar.html" 
+        style="border:none;width:100%;height:70px;position:fixed;bottom:0;left:0;z-index:999;">
+</iframe>
 
 </body>
 

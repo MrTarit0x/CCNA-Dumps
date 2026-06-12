@@ -1,5 +1,5 @@
 
-window.bank = [
+window.bank1 = [
       // Domain 1: Network Fundamentals
       { cat: "OSI & TCP/IP", hot: true, q: "Which layer of the OSI model is responsible for end-to-end communication, error recovery, and flow control?", opts: ["Network layer", "Data Link layer", "Transport layer", "Session layer"], ans: 2, exp: "The Transport layer (Layer 4) provides end-to-end communication, segmentation, error recovery (TCP), and flow control (windowing). TCP and UDP operate here." },
       { cat: "OSI & TCP/IP", hot: true, q: "A network engineer needs to identify the PDU (Protocol Data Unit) used at the Data Link layer. Which PDU is correct?", opts: ["Segment", "Packet", "Frame", "Bit"], ans: 2, exp: "Data Link layer (Layer 2) PDU = Frame. Transport=Segment, Network=Packet, Physical=Bit. Memory trick: 'Some People Fear Birthdays' = Segment, Packet, Frame, Bit (Layer 4,3,2,1)." },
@@ -128,7 +128,10 @@ window.bank = [
       { cat: "IPv4 Subnetting", q: "A host at 192.168.1.62/26 sends a packet to 192.168.1.65/26. Does it go through a router?", opts: ["No — both are in the 192.168.1.0/26 subnet", "No — both are in the 192.168.1.64/26 subnet", "Yes — they are in different /26 subnets", "Yes — different Class C networks"], ans: 2, exp: "/26 block=64. .62 is in subnet 192.168.1.0/26 (.0-.63). .65 is in subnet 192.168.1.64/26 (.64-.127). Different subnets — traffic must go through a router (default gateway)." },
       { cat: "Network Components", q: "What does a router do with a packet whose destination IP address has no matching route in the routing table and no default route is configured?", opts: ["Floods the packet out all interfaces", "Sends the packet to the nearest router", "Drops the packet and sends an ICMP Destination Unreachable message", "Holds the packet and waits for a route to appear"], ans: 2, exp: "With no matching route and no default route, the router drops the packet and sends an ICMP 'Destination Unreachable' message back to the source. This is the 'implicit deny' of routing — just like ACLs." },
 
+];
 
+
+window.bank2 = [
       // Domain 2: Network Access
       { cat: "VLANs", hot: 1, q: "Which VLAN is the default VLAN on a Cisco switch and cannot be deleted or renamed?", opts: ["VLAN 0", "VLAN 1", "VLAN 1002", "VLAN 4094"], ans: 1, exp: "VLAN 1 is the default VLAN on all Cisco switches. All ports belong to VLAN 1 by default. It cannot be deleted, renamed, or deactivated. Security best practice: move all used ports off VLAN 1." },
       { cat: "VLANs", hot: 1, q: "What is the valid range for normal-range VLANs on a Cisco switch?", opts: ["1–1005", "1–4094", "2–1001", "1006–4094"], ans: 0, exp: "Normal-range VLANs: 1–1005. VLANs 1002–1005 are reserved for legacy Token Ring and FDDI. Extended-range VLANs: 1006–4094 (require VTP transparent or off mode)." },
@@ -242,8 +245,10 @@ window.bank = [
       { cat: "Spanning Tree Protocol", q: "What does 'show spanning-tree vlan 10' display?", opts: ["Only the root bridge information", "Detailed STP information for VLAN 10 — root bridge, local bridge, all ports with role and state", "MAC address table for VLAN 10", "VLAN 10 IP addressing"], ans: 1, exp: "'show spanning-tree vlan 10' shows: root bridge ID, this switch's bridge ID, root path cost, and for each interface — role (root/designated/alternate), state (forwarding/discarding), cost, and port priority. Complete STP topology for VLAN 10." },
       { cat: "Wireless Security", q: "A company wants individual users to authenticate with their own credentials for Wi-Fi. No shared password. Which solution is BEST?", opts: ["WPA2-Personal with a strong PSK", "WPA2-Enterprise with 802.1X and RADIUS", "WEP with individual keys", "MAC address filtering"], ans: 1, exp: "WPA2-Enterprise (802.1X) with RADIUS: each user authenticates with their own username/password (or certificate). Administrators can revoke individual access without changing the password for everyone. WPA2-Personal shares ONE password with all users." },
 
+];
 
 
+window.bank3 = [
       //Domain 3: IP Conectivity
       // ── ROUTING TABLE ──────────────────────────────────────────────────────────
       { cat: "Routing Table", hot: 1, q: "A router has these routes: S 10.1.1.0/24, O 10.1.1.0/26, C 10.1.1.0/28. A packet arrives for 10.1.1.18. Which route is used?", opts: ["S 10.1.1.0/24 — static routes preferred", "O 10.1.1.0/26 — OSPF preferred", "C 10.1.1.0/28 — longest prefix match wins", "All three — load balancing"], ans: 2, exp: "Longest prefix match ALWAYS wins regardless of AD or protocol. /28 > /26 > /24. 10.1.1.18 falls within 10.1.1.16/28 (hosts .17-.30). The /28 connected route is used. This is the single most important routing rule." },
@@ -339,7 +344,10 @@ window.bank = [
       { cat: "OSPFv2", hot: 1, q: "'ip ospf 1 area 0' is configured on an interface. What does this achieve?", opts: ["Enables OSPF process 1 and adds this specific interface to area 0 — alternative to the 'network' command", "Sets the cost to 1 for this interface", "Enables DR election on this interface", "Disables OSPF on this interface"], ans: 0, exp: "Interface-level OSPF config: 'ip ospf [process-id] area [area-id]' directly adds that interface to OSPF. More precise than the 'network' command — activates OSPF on exactly that interface. Preferred method in modern IOS deployments." },
       { cat: "FHRP — HSRP/VRRP/GLBP", hot: 1, q: "In HSRP, what IP address should hosts configure as their default gateway?", opts: ["The Active router's real interface IP", "The Standby router's real interface IP", "The Virtual IP address shared by the HSRP group", "The highest IP in the subnet"], ans: 2, exp: "Hosts MUST use the VIRTUAL IP as their gateway — NOT the real IP of either router. The virtual IP stays constant even during failover. If a host uses the real Active router IP and that router fails, the host loses its gateway even though HSRP switches over." },
 
+];
 
+
+window.bank4 = [
       //Domainn 4: IP Services
       { cat: "NAT", hot: 1, q: "A host with private IP 192.168.1.10 accesses the internet. The router translates it to public IP 203.0.113.5. What is 192.168.1.10 called in NAT terminology?", opts: ["Inside Global", "Outside Local", "Inside Local", "Outside Global"], ans: 2, exp: "NAT terms: Inside Local = private IP of the internal host AS SEEN FROM INSIDE the network (192.168.1.10). Inside Global = public IP representing the internal host on the internet (203.0.113.5). Always: Inside Local = REAL private IP, Inside Global = TRANSLATED public IP." },
       { cat: "NAT", hot: 1, q: "What is 'Inside Global' in NAT terminology?", opts: ["The private IP address of an internal host", "The public IP address representing an internal host on the internet", "The IP address of an external server", "The router's loopback address"], ans: 1, exp: "Inside Global = the public (translated) IP address that represents an internal host on the internet. This is what external servers see as the source IP. The translation table maps Inside Local ↔ Inside Global for each session." },
@@ -437,7 +445,10 @@ window.bank = [
       { cat: "FTP & TFTP", q: "Which command configures FTP credentials on a Cisco router for IOS uploads?", opts: ["ftp username admin password Cisco", "ip ftp username cisco / ip ftp password Cisco123", "ftp-server username cisco", "service ftp username cisco password Cisco123"], ans: 1, exp: "'ip ftp username [name]' and 'ip ftp password [pass]' configure the FTP credentials used when the router acts as an FTP CLIENT (uploading/downloading files from an FTP server). Used before 'copy ftp flash' to authenticate with the server." },
       { cat: "SSH & Remote Access", q: "What does 'ip ssh authentication-retries 3' configure?", opts: ["Maximum concurrent SSH sessions", "Number of password attempts before SSH session is disconnected", "SSH key rotation interval", "SSH session timeout"], ans: 1, exp: "'ip ssh authentication-retries 3' allows 3 failed password attempts before the SSH session is terminated. Limits brute-force login attempts via SSH. Default is 3. Combine with 'login block-for' for comprehensive brute-force protection." },
 
+];
 
+
+window.bank5 = [
       //Domain 5: Security Fundamentals
       // ── SECURITY CONCEPTS ──────────────────────────────────────────────────────
       { cat: "Security Concepts", hot: 1, q: "Which term describes a weakness in a system that could be exploited by an attacker?", opts: ["Threat", "Exploit", "Vulnerability", "Risk"], ans: 2, exp: "Vulnerability = a weakness or flaw in a system (unpatched software, open port, weak password). Threat = potential danger that could exploit it. Exploit = the actual tool/technique used to attack. Risk = probability × impact. Think: Vulnerability is the open window, Threat is the burglar, Exploit is the ladder." },
@@ -527,8 +538,10 @@ window.bank = [
       { cat: "AAA", q: "What is RADIUS primarily used for in enterprise networks?", opts: ["Device administration (CLI access control)", "Network access authentication — 802.1X wireless, VPN, and remote access", "Only for accounting", "SNMP community string management"], ans: 1, exp: "RADIUS primary use: network access (802.1X wireless authentication, VPN user authentication, dial-up). RADIUS combines authentication + authorization in one response. TACACS+ is preferred for DEVICE ADMINISTRATION (CLI command authorization). Both can do accounting." },
       { cat: "Device Access Control", q: "Which command sets the minimum password length to 10 characters on a Cisco device?", opts: ["password min-length 10", "security passwords min-length 10", "line password minimum 10", "ip security password-length 10"], ans: 1, exp: "'security passwords min-length 10' (global config) enforces minimum password length of 10 characters. Any attempt to set a shorter password is rejected. This is a global setting affecting all password types. Combine with 'login block-for' for comprehensive authentication security." },
 
+];
 
 
+window.bank6 = [
       // Domain 6: Automation and Programmability
             // ── AUTOMATION IMPACT ──────────────────────────────────────────────────────
       { cat: "Automation Impact", hot: 1, q: "What is the PRIMARY benefit of network automation compared to manual CLI-based management?", opts: ["Reduces hardware costs", "Eliminates human errors, ensures consistent configuration, and speeds up deployment across hundreds of devices simultaneously", "Makes the network more secure by default", "Replaces the need for network engineers"], ans: 1, exp: "Network automation eliminates the #1 source of network outages: human error. Manual CLI = one typo per device × 500 devices = many potential mistakes. Automation: one tested script/template deploys identical config to all devices simultaneously. Benefits: speed, consistency, accuracy, audit trail, and scalability." },

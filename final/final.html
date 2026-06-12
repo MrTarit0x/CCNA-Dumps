@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCNA 200-301 Final Exam Practice</title>
+  <link rel="stylesheet" href="final.css">
+</head>
+<body>
+<div class="hero">
+  <div>
+    <div class="hero-title">🎯 CCNA 200-301 — 200 Final Exam MCQ · All 6 Domains</div>
+    <div class="hero-sub">Low → Medium difficulty · Highest exam probability · Complete simulation</div>
+  </div>
+  <div style="font-size:11px;opacity:.85">Score 825+/1000 to pass real exam</div>
+</div>
+<h1>Complete CCNA Final Exam Practice — 200 Questions</h1>
+<div class="stats-bar">
+  <div class="stat"><div class="v" id="st">200</div><div class="l">Total</div></div>
+  <div class="stat c"><div class="v" id="sc">0</div><div class="l">Correct</div></div>
+  <div class="stat w"><div class="v" id="sw">0</div><div class="l">Wrong</div></div>
+  <div class="stat"><div class="v" id="su">200</div><div class="l">Remaining</div></div>
+  <div class="stat"><div class="v" id="sp">0%</div><div class="l">Score</div></div>
+</div>
+<div class="progress-wrap"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div class="domain-pills" id="dpills"></div>
+<div class="filter-bar">
+  <input type="text" id="search" placeholder="🔍 Search any topic, command, concept..." oninput="af()">
+  <button class="filter-btn active" onclick="sf('all',this)">All</button>
+  <button class="filter-btn" onclick="sf('unattempted',this)">Remaining</button>
+  <button class="filter-btn" onclick="sf('correct',this)">✓ Correct</button>
+  <button class="filter-btn" onclick="sf('wrong',this)">✗ Wrong</button>
+</div>
+<div class="global-btns">
+  <button class="gbtn gbtn-p" onclick="saAll()">Submit All</button>
+  <button class="gbtn gbtn-g" onclick="raAll()">All Explanations</button>
+  <button class="gbtn gbtn-gray" onclick="resetAll()">Retake</button>
+  <button class="gbtn gbtn-r" onclick="showScore()">📊 Full Score</button>
+</div>
+<div id="qlist"></div>
+
+<script src="final.js"></script>
+<script>
+
+const qs = shuffle([...bank]);
+
+
+const domains=[
+  {id:"D1",label:"D1: Fundamentals",color:"#5B3FD4"},
+  {id:"D2",label:"D2: Network Access",color:"#0891b2"},
+  {id:"D3",label:"D3: IP Connectivity",color:"#0f766e"},
+  {id:"D4",label:"D4: IP Services",color:"#b45309"},
+  {id:"D5",label:"D5: Security",color:"#b91c1c"},
+  {id:"D6",label:"D6: Automation",color:"#7c3aed"},
+];
+
+
+
+let uA={},sub={},cf='all',cd='all';
+const dpColors={D1:"#5B3FD4",D2:"#0891b2",D3:"#0f766e",D4:"#b45309",D5:"#b91c1c",D6:"#7c3aed"};
+
+function buildNav(){
+  const nav=document.getElementById('dpills');
+  let h=`<button class="dp active" 
+          style="background:#5B3FD4;color:#fff" 
+          onclick="setDomain('all',this)">
+          All Domains
+        </button>`;
+
+  domains.forEach(d=>{
+    const cnt=qs.filter(q=>q.d===d.id).length;
+
+    h+=`<button class="dp"
+            style="background:${d.color};color:#fff"
+            onclick="setDomain('${d.id}',this)">
+            ${d.label} (${cnt})
+          </button>`;
+  });
+
+  nav.innerHTML=h;
+}
+
+function rl(){
+  const s=document.getElementById('search').value.toLowerCase();
+  const c=document.getElementById('qlist');
+  let h='',prev='',n=0;
+  qs.forEach((q,i)=>{
+    if(cd!=='all'&&q.d!==cd)return;
+    if(cf==='correct'&&!(sub[i]&&uA[i]===q.ans))return;
+    if(cf==='wrong'&&!(sub[i]&&uA[i]!==q.ans))return;
+    if(cf==='unattempted'&&sub[i])return;
+    if(s&&!q.q.toLowerCase().includes(s)&&!q.exp.toLowerCase().includes(s)&&!q.d.toLowerCase().includes(s))return;
+    n++;
+    const dc=dpColors[q.d]||'#5B3FD4';
+    if(q.d!==prev){
+      const dm=domains.find(d=>d.id===q.d);
+      h+=`<div class="cat-h" style="background:${dc}">${dm?dm.label:q.d}</div>`;
+      prev=q.d;
+    }
+    const iS=sub[i],iC=iS&&uA[i]===q.ans,iW=iS&&uA[i]!==q.ans;
+    let cc='q-card';if(iC)cc+=' ac';if(iW)cc+=' aw';
+    let badge='';
+    if(iC)badge='<span class="rb rbc">✓ Correct</span>';
+    else if(iW)badge='<span class="rb rbw">✗ Wrong</span>';
+    else if(uA[i]!==undefined)badge='<span class="rb rbs">Selected</span>';
+    h+=`<div class="${cc}" id="qc${i}">
+      <div class="q-header">
+        <span class="q-num">Q${i+1}${q.hot?'<span class="tag-hot">🔥</span>':''}</span>
+        <span style="flex:1"></span>${badge}
+        <span class="q-cat" style="background:${dc}">${q.d}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">`;
+    ['A','B','C','D'].forEach((L,oi)=>{
+      let cls='opt';
+      if(uA[i]===oi&&!iS)cls+=' sel';
+      if(iS&&oi===q.ans)cls+=' ca';
+      if(iS&&uA[i]===oi&&oi!==q.ans)cls+=' wa';
+      const d=iS?'style="cursor:default"':`onclick="sel(${i},${oi})"`;
+      h+=`<div class="${cls}" ${d}><span class="opt-l">${L}</span>${q.opts[oi]}</div>`;
+    });
+    h+=`</div><div class="btn-row">
+      ${!iS?`<button class="btn bs" onclick="sbQ(${i})">Submit</button>`:''}
+      <button class="btn be" onclick="tgE(${i})">Explain</button>
+      ${iS?`<button class="btn br" onclick="rsQ(${i})">Reset</button>`:''}
+    </div>
+    <div class="exp" id="ex${i}"><strong>✅ </strong>${q.exp}</div></div>`;
+  });
+  if(!h||n===0)h='<div style="padding:20px;text-align:center;color:#888">No matching questions found.</div>';
+  c.innerHTML=h;upS();
+}
+function sel(i,o){if(sub[i])return;uA[i]=o;rl();}
+function sbQ(i){if(uA[i]===undefined){alert('Please select an answer!');return;}sub[i]=true;rl();}
+function tgE(i){const e=document.getElementById('ex'+i);if(e)e.classList.toggle('show');}
+function rsQ(i){delete uA[i];delete sub[i];rl();}
+function saAll(){qs.forEach((_,i)=>{if(uA[i]!==undefined)sub[i]=true;});rl();}
+function raAll(){document.querySelectorAll('.exp').forEach(e=>e.classList.add('show'));}
+function resetAll(){if(!confirm('Reset ALL 200 questions?'))return;uA={};sub={};rl();}
+function showScore(){
+  const tot=qs.length,att=Object.keys(sub).length;
+  const cor=qs.filter((q,i)=>sub[i]&&uA[i]===q.ans).length;
+  const pct=att>0?Math.round(cor/tot*100):0;
+  const g=pct>=85?'🏆 CCNA READY — Book Your Exam!':pct>=75?'👍 Almost There — Review Weak Areas':pct>=65?'📚 Good Progress — Keep Studying':pct>=50?'🔄 More Practice Needed':'📖 Study All Domains More';
+  let dscores='';
+  domains.forEach(d=>{
+    const dqs=qs.filter(q=>q.d===d.id);
+    const dattempted=dqs.filter((_,j)=>sub[qs.indexOf(dqs[j])]);
+    const dcor=dqs.filter((q,j)=>sub[qs.indexOf(dqs[j])]&&uA[qs.indexOf(dqs[j])]===q.ans).length;
+    const dpct=dattempted.length>0?Math.round(dcor/dqs.length*100):0;
+    dscores+=`<div class="ds"><div class="dv">${dpct}%</div>${d.label.split(':')[0]}</div>`;
+  });
+  const ov=document.createElement('div');ov.className='overlay';ov.onclick=cm;
+  const md=document.createElement('div');md.className='score-modal';
+  md.innerHTML=`<h2>Final Exam Score</h2>
+    <div class="big">${pct}%</div>
+    <p style="font-size:14px;margin:6px 0">${cor} / ${tot} correct</p>
+    <p style="color:#dc2626">Wrong: ${att-cor}</p>
+    <p style="color:#6b7280;margin-bottom:8px">Unattempted: ${tot-att}</p>
+    <p style="font-weight:700;font-size:15px;color:#5B3FD4;margin-bottom:10px">${g}</p>
+    <p style="font-size:11px;font-weight:700;margin-bottom:6px">Score by Domain:</p>
+    <div class="d-score">${dscores}</div>
+    <p style="font-size:11px;color:#888;margin:8px 0">Real CCNA passing score ≈ 825/1000 (~82%)</p>
+    <button class="gbtn gbtn-p" style="margin-top:10px" onclick="cm()">Close</button>`;
+  document.body.appendChild(ov);document.body.appendChild(md);window._m=md;window._o=ov;
+}
+function cm(){if(window._m)window._m.remove();if(window._o)window._o.remove();}
+function upS(){
+  const tot=qs.length,att=Object.keys(sub).length;
+  const cor=qs.filter((q,i)=>sub[i]&&uA[i]===q.ans).length;
+  document.getElementById('st').textContent=tot;
+  document.getElementById('sc').textContent=cor;
+  document.getElementById('sw').textContent=att-cor;
+  document.getElementById('su').textContent=tot-att;
+  const pct=att>0?Math.round(cor/tot*100):0;
+  document.getElementById('sp').textContent=pct+'%';
+  document.getElementById('prog').style.width=Math.round(att/tot*100)+'%';
+}
+function setDomain(d,btn){
+  cd=d;
+  document.querySelectorAll('.dp').forEach(b=>{
+    b.classList.remove('active');
+    b.style.background='transparent';
+    const did=b.onclick?.toString().match(/'([^']+)'/)?.[1];
+    if(did&&did!=='all'){b.style.color=dpColors[did]||'#555';}
+    else{b.style.color='#5B3FD4';}
+  });
+  btn.classList.add('active');
+  btn.style.background=d==='all'?'#5B3FD4':(dpColors[d]||'#5B3FD4');
+  btn.style.color='#fff';
+  rl();
+}
+function sf(f,btn){cf=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');rl();}
+function af(){rl();}
+buildNav();
+
+    // ----------------------------------------------
+
+    // Fisher-Yates shuffle
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Shuffle options and fix answer index
+    function shuffleQuestions() {
+      qs.forEach(q => {
+        const correctAnswer = q.opts[q.ans];
+
+        const paired = q.opts.map((opt, idx) => ({
+          text: opt,
+          wasCorrect: idx === q.ans
+        }));
+
+        shuffle(paired);
+
+        q.opts = paired.map(x => x.text);
+        q.ans = paired.findIndex(x => x.wasCorrect);
+      });
+
+      shuffle(qs);
+    }
+
+    // Run once when page loads
+    shuffleQuestions();
+
+    // ----------------------------------------------
+
+
+
+rl();
+</script>
+<iframe src="../navbar.html" 
+        style="border:none;width:100%;height:70px;position:fixed;bottom:0;left:0;z-index:999;">
+</iframe>
+</body>
+</html>
